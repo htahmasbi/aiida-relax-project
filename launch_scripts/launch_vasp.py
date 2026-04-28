@@ -1,42 +1,66 @@
-from ase.build import bulk
-from aiida import orm, engine
-from workflows.vasp_simple import MyVaspWorkChain
+from aiida import orm, load_profile
+from aiida.engine import submit
+from aiida.plugins import DataFactory
 
-def launch():
-    # 1. Setup Structure (via ASE)
-    atoms = bulk('Si', 'diamond', a=5.43)
-    structure = orm.StructureData(ase=atoms)
+from aiida_relax_project.workflows.single_point import VaspSinglePointWorkChain
 
-    # 2. Setup VASP Inputs (Your INCAR files)
-    parameters = orm.Dict(dict={
-        'ENCUT': 400,
-        'ISMEAR': 0,
-        'SIGMA': 0.05,
-        'EDIFF': 1e-6,
-    })
+load_profile()
 
-    # 3. Setup K-Points
+StructureData = DataFactory("core.structure")
+
+
+def main():
+    code = orm.load_code("vasp@localhost")  # change this to your configured code label
+
+    structure = StructureData()
+    structure.set_cell(
+        [
+            [5.43, 0.00, 0.00],
+            [0.00, 5.43, 0.00],
+            [0.00, 0.00, 5.43],
+        ]
+    )
+    structure.append_atom(position=(0.00, 0.00, 0.00), symbols="Si")
+    structure.append_atom(position=(1.3575, 1.3575, 1.3575), symbols="Si")
+    structure.store()
+
     kpoints = orm.KpointsData()
     kpoints.set_kpoints_mesh([4, 4, 4])
 
-    # 4. Define your Code and Potentials
-    # Replace these strings with your actual labels from 'verdi code list'
-    code = orm.load_code('vasp@my_cluster')
-    pot_family = orm.Str('PBE_Family') 
-    pot_mapping = orm.Dict(dict={'Si': 'Si'})
+    parameters = orm.Dict(
+        dict={
+            "incar": {
+                "ENCUT": 300,
+                "PREC": "Normal",
+                "EDIFF": 1e-5,
+                "ISMEAR": 0,
+                "SIGMA": 0.05,
+            }
+        }
+    )
 
-    # 5. Build input dictionary for the WorkChain
-    builder = MyVaspWorkChain.get_builder()
-    builder.structure = structure
-    builder.code = code
-    builder.parameters = parameters
-    builder.kpoints = kpoints
-    builder.potential_family = pot_family
-    builder.potential_mapping = pot_mapping
+    inputs = {
+        "code": code,
+        "structure": structure,
+        "parameters": parameters,
+        "kpoints": kpoints,
+        "potential_family": orm.Str("PBE.54"),
+        "potential_mapping": orm.Dict(dict={"Si": "Si"}),
+        "metadata_options": orm.Dict(
+            dict={
+                "resources": {
+                    "num_machines": 1,
+                    "num_mpiprocs_per_machine": 8,
+                },
+                "max_wallclock_seconds": 1800,
+                "withmpi": True,
+            }
+        ),
+    }
 
-    # 6. Submit the WorkChain to the AiiDA Daemon
-    node = engine.submit(builder)
-    print(f"Submitted WorkChain with PK: {node.pk}")
+    node = submit(VaspSinglePointWorkChain, **inputs)
+    print(f"Submitted VaspSinglePointWorkChain<{node.pk}>")
 
-if __name__ == '__main__':
-    launch()
+
+if __name__ == "__main__":
+    main()

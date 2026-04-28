@@ -1,0 +1,14 @@
+[project]
+name = "aiida-relax-project"
+version = "0.1.0"
+description = "Learning workflows for AiiDA + VASP"
+requires-python = ">=3.10"
+dependencies = [
+    "aiida-core",
+    "aiida-vasp",
+    "ase",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
