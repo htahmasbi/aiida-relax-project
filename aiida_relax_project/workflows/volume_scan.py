@@ -35,12 +35,10 @@ class VaspVolumeScanWorkChain(WorkChain):
 
     def run_calculations(self):
         self.report("Submitting VASP calculations for all structures in group.")
-
-        to_context = {}
-
+    
+        calculations = []
+    
         for index, structure in enumerate(self.inputs.structure_group.nodes):
-            label = structure.label or f"structure_{index}"
-
             inputs = {
                 "code": self.inputs.code,
                 "structure": structure,
@@ -49,14 +47,14 @@ class VaspVolumeScanWorkChain(WorkChain):
                 "potential_family": self.inputs.potential_family,
                 "potential_mapping": self.inputs.potential_mapping,
             }
-
+    
             if "metadata_options" in self.inputs:
                 inputs["metadata_options"] = self.inputs.metadata_options
-
+    
             future = self.submit(VaspSinglePointWorkChain, **inputs)
-            to_context[label] = append_(future)
-
-        return ToContext(calculations=to_context)
+            calculations.append(append_(future))
+    
+        return ToContext(calculations=calculations)
 
     def inspect_results(self):
         failed = [
