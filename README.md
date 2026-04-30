@@ -13,7 +13,7 @@ Learning project for building AiiDA workflows for VASP calculations.
 ## Project Structure
 
 ```text
-iaiida-relax-project/
+aiida-relax-project/
 ├── pyproject.toml
 ├── aiida_relax_project/
 │   ├── __init__.py
@@ -22,8 +22,7 @@ iaiida-relax-project/
 │       ├── single_point.py
 │       └── volume_scan.py
 ├── launch_scripts/
-│   ├── launch_single_point.py
-│   └── launch_volume_scan.py
+│   └── launch_single_point.py
 └── data_generation/
     └── build_structures.py
 ```

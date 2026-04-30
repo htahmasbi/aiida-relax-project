@@ -2,7 +2,7 @@
 name = "aiida-relax-project"
 version = "0.1.0"
 description = "Learning workflows for AiiDA + VASP"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "aiida-core",
     "aiida-vasp",
