@@ -1,11 +1,11 @@
 from aiida import orm
-from aiida.engine import WorkChain, ToContext, append_
+from aiida.engine import WorkChain, ToContext
 
 from aiida_relax_project.workflows.single_point import VaspSinglePointWorkChain
 
 
 class VaspVolumeScanWorkChain(WorkChain):
-    """Run VASP single-point calculations for a group of structures."""
+    """Run one VASP single-point workflow for each structure in a group."""
 
     @classmethod
     def define(cls, spec):
@@ -34,11 +34,16 @@ class VaspVolumeScanWorkChain(WorkChain):
         )
 
     def run_calculations(self):
-        self.report("Submitting VASP calculations for all structures in group.")
-    
-        calculations = []
-    
+        """Submit one child workflow for each structure."""
+
+        self.ctx.labels = []
+
+        context = {}
+
         for index, structure in enumerate(self.inputs.structure_group.nodes):
+            label = f"calc_{index}"
+            self.ctx.labels.append(label)
+
             inputs = {
                 "code": self.inputs.code,
                 "structure": structure,
@@ -47,41 +52,58 @@ class VaspVolumeScanWorkChain(WorkChain):
                 "potential_family": self.inputs.potential_family,
                 "potential_mapping": self.inputs.potential_mapping,
             }
-    
+
             if "metadata_options" in self.inputs:
                 inputs["metadata_options"] = self.inputs.metadata_options
-    
-            future = self.submit(VaspSinglePointWorkChain, **inputs)
-            calculations.append(append_(future))
-    
-        return ToContext(calculations=calculations)
+
+            self.report(f"Submitting calculation {label} for StructureData<{structure.pk}>.")
+            context[label] = self.submit(VaspSinglePointWorkChain, **inputs)
+
+        return ToContext(**context)
 
     def inspect_results(self):
-        failed = [
-            calc for calc in self.ctx.calculations
-            if not calc.is_finished_ok
-        ]
+        """Check whether all child workflows finished successfully."""
+
+        failed = []
+
+        for label in self.ctx.labels:
+            calculation = self.ctx[label]
+
+            if not calculation.is_finished_ok:
+                failed.append(calculation)
 
         if failed:
             self.report(f"{len(failed)} calculations failed.")
             return self.exit_codes.ERROR_SOME_CALCULATIONS_FAILED
 
-        self.report("All scan calculations finished successfully.")
+        self.report("All volume-scan calculations finished successfully.")
 
     def collect_results(self):
+        """Collect energies from child workflow outputs."""
+
         energies = {}
 
-        for calc in self.ctx.calculations:
-            label = calc.inputs.structure.label or str(calc.inputs.structure.pk)
+        for label in self.ctx.labels:
+            calculation = self.ctx[label]
+            structure = calculation.inputs.structure
 
-            try:
-                output_parameters = calc.outputs.output_parameters.get_dict()
-                energy = output_parameters.get("energy", None)
-            except Exception:
-                energy = None
+            structure_label = structure.label or f"structure_{structure.pk}"
 
-            energies[label] = {
-                "workflow_pk": calc.pk,
+            energy = None
+
+            if "output_parameters" in calculation.outputs:
+                output_parameters = calculation.outputs.output_parameters.get_dict()
+
+                # The exact key can depend on aiida-vasp version/parser output.
+                energy = (
+                    output_parameters.get("energy")
+                    or output_parameters.get("total_energies", {}).get("energy_extrapolated")
+                    or output_parameters.get("total_energies", {}).get("energy_free")
+                )
+
+            energies[structure_label] = {
+                "structure_pk": structure.pk,
+                "workflow_pk": calculation.pk,
                 "energy": energy,
             }
 
