@@ -36,4 +36,4 @@ pip install aiida-core aiida-vasp ase
 pip install -e .
 verdi quicksetup
 verdi daemon start
-
+```
