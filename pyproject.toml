@@ -9,6 +9,9 @@ dependencies = [
     "ase",
 ]
 
+[project.entry-points."aiida.workflows"]
+"relax.vasp" = "aiida_relax_project.relax:MyVaspWorkChain"
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
