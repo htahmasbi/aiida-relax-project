@@ -88,7 +88,7 @@ def make_kpoints():
 def main():
     load_profile()
 
-    code = orm.load_code("cp2k@mycluster")  # change this to your CP2K code label
+    code = orm.load_code("cp2k@localhost")  # change this to your CP2K code label
 
     group, _ = orm.Group.collection.get_or_create("mc2d_bn_cp2k_test_5")
 
