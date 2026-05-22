@@ -4,7 +4,7 @@ Learning project for building AiiDA workflows for VASP and CP2K calculations.
 
 ## Goal
 
-1. Run one VASP calculation through AiiDA.
+1. Run one VASP/CP2K calculation through AiiDA.
 2. Wrap it in a custom WorkChain.
 3. Run many structures in a volume scan.
 4. Collect energies.
