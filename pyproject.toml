@@ -9,6 +9,8 @@ dependencies = [
     "aiida-cp2k",
     "ase",
     "pymatgen",
+    "requests",
+    "pyyaml",
 ]
 
 [project.entry-points."aiida.workflows"]
