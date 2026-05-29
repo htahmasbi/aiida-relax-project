@@ -1,0 +1,111 @@
+# aiida-relax-project Configuration
+# This file contains default settings for calculations.
+# Environment variables take precedence over these values.
+
+# =============================================================================
+# Default Settings
+# =============================================================================
+
+[default]
+engine = "vasp"
+code_label = "localhost"
+max_wallclock_seconds = 3600
+resource_preset = "default"
+
+# =============================================================================
+# VASP Settings
+# =============================================================================
+
+[vasp]
+# Potential family for PAW pseudos
+potential_family = "PBE.54"
+
+# K-point mesh for reciprocal space integration
+kpoints_mesh = [4, 4, 4]
+
+# Default plane-wave cutoff (eV)
+default_encut = 400
+
+# Default ISIF for relaxation (3 = volume+shape+positions)
+default_isif = 3
+
+# Default IBRION for ion optimization (-1=none, 1=conjugate gradient, 2=quasi-Newton)
+default_ibrion = 2
+
+# Default potential mapping (element -> pseudo)
+[vasp.potential_mapping]
+Si = "Si"
+B = "B"
+N = "N"
+
+# =============================================================================
+# CP2K Settings
+# =============================================================================
+
+[cp2k]
+# K-point mesh (typically [4,1,4] for slab calculations)
+kpoints_mesh = [4, 1, 4]
+
+# Default Gaussian plane-wave cutoff (Ry)
+default_cutoff = 400
+
+# Default SCF convergence threshold
+default_eps_scf = 1.0e-6
+
+# Maximum SCF iterations
+default_max_scf = 200
+
+# CP2K-specific file names
+basis_set_file = "BASIS_MOLOPT"
+potential_file = "GTH_POTENTIALS"
+
+# =============================================================================
+# Relaxation Settings
+# =============================================================================
+
+[relax]
+# Default relaxation type: volume, shape, positions, cell
+relaxation_type = "volume"
+
+# Maximum optimization steps
+default_max_steps = 50
+
+# Energy convergence threshold (eV)
+default_energy_tolerance = 1.0e-5
+
+# Force convergence threshold (eV/Ang)
+default_force_tolerance = 0.01
+
+# =============================================================================
+# Volume Scan Settings
+# =============================================================================
+
+[volume_scan]
+# Maximum number of structures to process
+max_structures = 5
+
+# Continue processing if some calculations fail
+continue_on_failure = false
+
+# Default group label for new structure groups
+default_group = "default_scan_group"
+
+# =============================================================================
+# Generic Parameters (used with --generic flag)
+# =============================================================================
+
+[generic]
+# Default plane-wave cutoff
+encut = 400
+
+# Default optimization steps
+max_steps = 50
+
+# Default energy tolerance
+energy_tolerance = 1.0e-5
+
+# Default exchange-correlation functional
+xc_functional = "PBE"
+
+# Default SCF initial guess
+scf_guess = "ATOMIC"
