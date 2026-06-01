@@ -11,8 +11,10 @@ if TYPE_CHECKING:
     from aiida.orm import StructureData, Dict, KpointsData, AbstractCode, Str
     from aiida_relax_project.core.enums import EngineType, RelaxType
 
+from aiida import orm
+
 from aiida_relax_project.core.engine import EngineFactory, BaseEngineAdapter
-from aiida_relax_project.core.config import ProjectConfig
+from aiida_relax_project.core.config import ProjectConfig, _merge_configs as _deep_merge
 from aiida_relax_project.core.enums import EngineType
 
 logger = logging.getLogger(__name__)
@@ -95,6 +97,28 @@ class SinglePointBuilder(BaseWorkflowBuilder):
         if engine == "vasp":
             inputs["potential_family"] = orm.Str(self.config.vasp.potential_family)
             inputs["potential_mapping"] = orm.Dict(dict=self.config.vasp.potential_mapping)
+            if use_generic_params and self.config.vasp.raw_incar:
+                params_dict = inputs["parameters"].get_dict()
+                params_dict.setdefault("raw_incar", {})
+                params_dict["raw_incar"].update(self.config.vasp.raw_incar)
+                inputs["parameters"] = orm.Dict(dict=params_dict)
+
+        if engine == "cp2k" and use_generic_params:
+            params_dict = inputs["parameters"].get_dict()
+            if self.config.cp2k.basis_set_mapping:
+                params_dict.setdefault("basis_set_mapping", {})
+                params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
+            if self.config.cp2k.potential_mapping:
+                params_dict.setdefault("potential_mapping", {})
+                params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+            params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
+            params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+            if self.config.cp2k.raw_parameters:
+                params_dict.setdefault("raw_parameters", {})
+                params_dict["raw_parameters"] = _deep_merge(
+                    params_dict["raw_parameters"], self.config.cp2k.raw_parameters
+                )
+            inputs["parameters"] = orm.Dict(dict=params_dict)
 
         inputs.update(extra_inputs)
         return inputs
@@ -142,6 +166,23 @@ class RelaxationBuilder(BaseWorkflowBuilder):
         if use_generic_params:
             params_dict = parameters.get_dict()
             params_dict["run_type"] = "relax"
+            if engine == "vasp" and self.config.vasp.raw_incar:
+                params_dict.setdefault("raw_incar", {})
+                params_dict["raw_incar"].update(self.config.vasp.raw_incar)
+            if engine == "cp2k":
+                if self.config.cp2k.basis_set_mapping:
+                    params_dict.setdefault("basis_set_mapping", {})
+                    params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
+                if self.config.cp2k.potential_mapping:
+                    params_dict.setdefault("potential_mapping", {})
+                    params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+                params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
+                params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+                if self.config.cp2k.raw_parameters:
+                    params_dict.setdefault("raw_parameters", {})
+                    params_dict["raw_parameters"] = _deep_merge(
+                        params_dict["raw_parameters"], self.config.cp2k.raw_parameters
+                    )
             parameters = adapter.build_parameters(params_dict, run_type="relax")
 
         kpoints = kpoints or adapter.build_kpoints(self.config.get_kpoints_mesh())
@@ -222,6 +263,28 @@ class VolumeScanBuilder(BaseWorkflowBuilder):
         if engine == "vasp":
             inputs["potential_family"] = orm.Str(self.config.vasp.potential_family)
             inputs["potential_mapping"] = orm.Dict(dict=self.config.vasp.potential_mapping)
+            if use_generic_params and self.config.vasp.raw_incar:
+                vasp_params = inputs["parameters"].get_dict()
+                vasp_params.setdefault("raw_incar", {})
+                vasp_params["raw_incar"].update(self.config.vasp.raw_incar)
+                inputs["parameters"] = orm.Dict(dict=vasp_params)
+
+        if engine == "cp2k" and use_generic_params:
+            params_dict = inputs["parameters"].get_dict()
+            if self.config.cp2k.basis_set_mapping:
+                params_dict.setdefault("basis_set_mapping", {})
+                params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
+            if self.config.cp2k.potential_mapping:
+                params_dict.setdefault("potential_mapping", {})
+                params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+            params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
+            params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+            if self.config.cp2k.raw_parameters:
+                params_dict.setdefault("raw_parameters", {})
+                params_dict["raw_parameters"] = _deep_merge(
+                    params_dict["raw_parameters"], self.config.cp2k.raw_parameters
+                )
+            inputs["parameters"] = orm.Dict(dict=params_dict)
 
         inputs.update(extra_inputs)
         return inputs
