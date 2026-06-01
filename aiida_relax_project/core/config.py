@@ -157,13 +157,9 @@ class ProjectConfig(BaseSettings):
         """Get metadata options based on resource preset and engine."""
         preset = RESOURCE_PRESETS.get(self.resource_preset, RESOURCE_PRESETS["default"])
 
-        num_procs = preset["num_mpiprocs_per_machine"]
-        if self.engine == "cp2k":
-            num_procs = self.cp2k.default_cutoff  # Use CP2K-specific preset
-
         return MetadataOptions(
             num_machines=preset.get("num_machines", 1),
-            num_mpiprocs_per_machine=num_procs,
+            num_mpiprocs_per_machine=preset.get("num_mpiprocs_per_machine", 8),
         )
 
     def get_kpoints_mesh(self) -> list[int]:
