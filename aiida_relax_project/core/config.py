@@ -50,6 +50,7 @@ class VaspConfig(BaseModel):
     default_encut: int = Field(default=400, ge=0)
     default_isif: int = Field(default=3, ge=0, le=7)
     default_ibrion: int = Field(default=2, ge=-1, le=15)
+    raw_incar: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("kpoints_mesh")
     @classmethod
@@ -70,6 +71,9 @@ class Cp2kConfig(BaseModel):
     default_eps_scf: float = Field(default=1e-6, gt=0)
     basis_set_file: str = "BASIS_MOLOPT"
     potential_file: str = "GTH_POTENTIALS"
+    basis_set_mapping: dict[str, str] = Field(default_factory=dict)
+    potential_mapping: dict[str, str] = Field(default_factory=dict)
+    raw_parameters: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("kpoints_mesh")
     @classmethod

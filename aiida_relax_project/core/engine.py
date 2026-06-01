@@ -23,6 +23,17 @@ from aiida_relax_project.core.exceptions import EngineError, StructureValidation
 logger = logging.getLogger(__name__)
 
 
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    """Recursively merge overlay into a copy of base."""
+    result = base.copy()
+    for key, value in overlay.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
 class BaseEngineAdapter(ABC):
     """Abstract base class for engine adapters.
 
@@ -132,6 +143,11 @@ class VaspAdapter(BaseEngineAdapter):
         elif run_type == "scf":
             incar["NSW"] = 0
 
+        raw_incar = generic_params.get("raw_incar", {})
+        if raw_incar:
+            incar.update(raw_incar)
+            logger.debug(f"Merged raw INCAR overrides: {raw_incar}")
+
         logger.debug(f"Built VASP INCAR: {incar}")
         return Dict(dict={"incar": incar})
 
@@ -192,6 +208,22 @@ class Cp2kAdapter(BaseEngineAdapter):
         eps_scf = generic_params.get("eps_scf", generic_params.get("energy_tolerance", 1e-6))
         max_scf = generic_params.get("max_scf", generic_params.get("max_steps", 200))
 
+        basis_set_mapping = generic_params.get("basis_set_mapping", {})
+        potential_mapping = generic_params.get("potential_mapping", {})
+
+        subsys: dict[str, Any] = {
+            "CELL": {
+                "PERIODIC": generic_params.get("periodic", "XYZ"),
+            },
+        }
+
+        for element, basis in basis_set_mapping.items():
+            potential = potential_mapping.get(element, "GTH-PBE")
+            subsys[f"KIND {element}"] = {
+                "BASIS_SET": basis,
+                "POTENTIAL": potential,
+            }
+
         cp2k_params: dict[str, Any] = {
             "GLOBAL": {
                 "RUN_TYPE": run_type_str,
@@ -201,8 +233,8 @@ class Cp2kAdapter(BaseEngineAdapter):
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
-                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
-                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                    "BASIS_SET_FILE_NAME": generic_params.get("basis_set_file", "BASIS_MOLOPT"),
+                    "POTENTIAL_FILE_NAME": generic_params.get("potential_file", "GTH_POTENTIALS"),
                     "CHARGE": charge,
                     "MULTIPLICITY": multiplicity,
                     "QS": {
@@ -229,11 +261,7 @@ class Cp2kAdapter(BaseEngineAdapter):
                         "XC_FUNCTIONAL": {"_": xc},
                     },
                 },
-                "SUBSYS": {
-                    "CELL": {
-                        "PERIODIC": generic_params.get("periodic", "XYZ"),
-                    },
-                },
+                "SUBSYS": subsys,
             },
         }
 
@@ -260,6 +288,11 @@ class Cp2kAdapter(BaseEngineAdapter):
                         "OPTIMIZER": optimizer,
                     },
                 }
+
+        raw_params = generic_params.get("raw_parameters", {})
+        if raw_params:
+            cp2k_params = _deep_merge(cp2k_params, raw_params)
+            logger.debug(f"Merged raw CP2K parameter overrides")
 
         logger.debug(f"Built CP2K parameters for run_type={run_type}")
         return Dict(dict=cp2k_params)
