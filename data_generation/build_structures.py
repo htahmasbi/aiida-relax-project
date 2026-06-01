@@ -2,10 +2,7 @@ from ase.build import bulk
 from aiida import orm, load_profile
 
 
-load_profile()
-
-
-def create_silicon_set(group_label="si_test_set"):
+def create_silicon_set(group_label: str = "si_test_set") -> None:
     """Create a small group of Si structures with different lattice constants."""
 
     group, _ = orm.Group.collection.get_or_create(label=group_label)
@@ -25,4 +22,5 @@ def create_silicon_set(group_label="si_test_set"):
 
 
 if __name__ == "__main__":
-    create_silicon_set()    
+    load_profile()
+    create_silicon_set()

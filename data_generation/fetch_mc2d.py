@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from aiida import load_profile, orm
 from aiida.plugins import DataFactory
+from pymatgen.core import Structure
 
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 from aiida_relax_project.transformations.structures import (
@@ -13,7 +16,7 @@ from aiida_relax_project.transformations.structures import (
 StructureData = DataFactory("core.structure")
 
 
-def modifier(structure):
+def modifier(structure: Structure) -> Structure:
     structure = rotate_xy_to_xz(structure, vacuum=20.0)
     structure = make_supercell_3x3(structure)
     return structure
@@ -43,7 +46,9 @@ def main():
         # Store in AiiDA
         aiida_structure = StructureData(pymatgen=structure)
         aiida_structure.label = f"MC2D {item['formula']} {item['id']} xz 3x3"
-        aiida_structure.description = "Downloaded from MC2D OPTIMADE and modified with pymatgen."
+        aiida_structure.description = (
+            "Downloaded from MC2D OPTIMADE and modified with pymatgen."
+        )
         aiida_structure.store()
 
         group.add_nodes(aiida_structure)
