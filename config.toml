@@ -136,20 +136,15 @@ scf_guess = "ATOMIC"
 
 # ---------------------------------------------------------------------------
 # CP2K raw_parameters: any nested CP2K input section
-# These override/extend the defaults in Cp2kAdapter.build_parameters().
-# Use the same nested key structure as CP2K input sections.
+# See examples/cp2k_gw_2d_bn.inp for a complete reference input file.
 # ---------------------------------------------------------------------------
-
-# [cp2k.raw_parameters]
+# Uncomment and adapt the sections below to match your CP2K input.
+#
 # [cp2k.raw_parameters.GLOBAL]
 # PROJECT = "GW-2D"
 #
 # [cp2k.raw_parameters.FORCE_EVAL.DFT]
-# # Multiple BASIS_SET_FILE_NAME as a TOML array
-# BASIS_SET_FILE_NAME = [
-#   "/path/to/BASIS_MOLOPT",
-#   "/path/to/RI_BASIS",
-# ]
+# BASIS_SET_FILE_NAME = ["/path/to/BASIS_MOLOPT", "/path/to/RI_BASIS"]
 # SORT_BASIS = "EXP"
 #
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.QS]
@@ -159,46 +154,5 @@ scf_guess = "ATOMIC"
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.MGRID]
 # REL_CUTOFF = 50
 #
-# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF]
-# SCF_GUESS = "RESTART"
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.MIXING]
-# ALPHA = 0.2
-# BETA = 0.8
-# NBROYDEN = 10
-# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.PRINT]
-# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.PRINT.RESTART]
-# _ = "ON"
-#
-# [cp2k.raw_parameters.FORCE_EVAL.DFT.KPOINTS]
-# SCHEME = "MONKHORST-PACK  24 1 24"
-# PARALLEL_GROUP_SIZE = -1
-#
-# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.DOS]
-# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.GW]
-# NUM_TIME_FREQ_POINTS = 10
-# MEMORY_PER_PROC = 300
-# EPS_FILTER = 1.0e-6
-#
-# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.BANDSTRUCTURE_PATH]
-# NPOINTS = 20
-# UNITS = "B_VECTOR"
-# SPECIAL_POINT = [
-#   "GAMMA  0.0    0.0    0.0",
-#   "M      0.5    0.0    0.0",
-#   "K      0.3333 0.0    0.3333",
-#   "GAMMA  0.0    0.0    0.0",
-# ]
-#
-# # IMPORTANT: CELL and COORD are auto-generated from the AiiDA StructureData.
-# # To override CELL parameters, add them here:
-# [cp2k.raw_parameters.FORCE_EVAL.SUBSYS.CELL]
-# ALPHA_BETA_GAMMA = "90 120 90"
-# PERIODIC = "XZ"
-#
-# # KIND sections use the element name after "KIND ".
-# # To use dual basis sets (ORB + RI_AUX), add them here:
-# [cp2k.raw_parameters.FORCE_EVAL.SUBSYS]
-# # Note: "KIND {elem}" merges with the default KIND built from basis_set_mapping.
-# # Use raw_parameters to add extra BASIS_SET entries the defaults don't cover:
-# # "KIND B" = { BASIS_SET_ORB = "aug-SZV-MOLOPT-GTH-tier-1", BASIS_SET_RI_AUX = "RI_...", POTENTIAL = "GTH-PBE-q3" }
-# # "KIND N" = { BASIS_SET_ORB = "aug-SZV-MOLOPT-GTH-tier-1", BASIS_SET_RI_AUX = "RI_...", POTENTIAL = "GTH-PBE-q5" }
+# ALPHA = 0.2; BETA = 1.5; NBROYDEN = 8
