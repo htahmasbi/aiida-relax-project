@@ -12,7 +12,7 @@ from aiida import orm
 from aiida.engine import WorkChain, ToContext
 
 from aiida_relax_project.core.engine import EngineFactory
-from aiida_relax_project.core.enums import EngineType
+
 from aiida_relax_project.core.logging import get_logger
 from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
 
@@ -105,11 +105,11 @@ class DynamicVolumeScanWorkChain(WorkChain):
             self.abort_nowait(f"Unknown engine: {engine_str}. Must be 'vasp' or 'cp2k'.")
             return
 
-        self.ctx.engine = EngineType(engine_str)
+        self.ctx.engine = engine_str
         logger.info("Using engine: %s", self.ctx.engine)
 
         structures = list(self.inputs.structure_group.nodes)
-        logger.info("Found %d structures to process", len(structures))
+        logger.info("Found %d structures to process with engine %s", len(structures), engine_str)
 
         if not structures:
             self.abort_nowait("Structure group is empty.")
@@ -156,7 +156,7 @@ class DynamicVolumeScanWorkChain(WorkChain):
 
             logger.info(
                 "Submitting %s calculation %s for StructureData<%s>",
-                engine.value.upper(),
+                str(engine).upper(),
                 label,
                 structure.pk,
             )
@@ -239,7 +239,7 @@ class DynamicVolumeScanWorkChain(WorkChain):
                 ]),
             )
 
-        self.out("engine_used", orm.Str(self.ctx.engine.value))
+        self.out("engine_used", orm.Str(self.ctx.engine))
         logger.info("Collected results for %d structures", len(energies))
 
     def _extract_energy(self, output_parameters: dict) -> Optional[float]:

@@ -6,7 +6,6 @@ from aiida_relax_project.workflows.single_point import (
     DynamicSinglePointWorkChain,
 )
 from aiida_relax_project.workflows.relaxation import (
-    MyRelaxLearningWorkChain,
     DynamicRelaxWorkChain,
 )
 from aiida_relax_project.workflows.volume_scan import (
@@ -18,7 +17,6 @@ __all__ = [
     "VaspSinglePointWorkChain",
     "Cp2kSinglePointWorkChain",
     "DynamicSinglePointWorkChain",
-    "MyRelaxLearningWorkChain",
     "DynamicRelaxWorkChain",
     "VaspVolumeScanWorkChain",
     "DynamicVolumeScanWorkChain",

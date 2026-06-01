@@ -1,144 +1,174 @@
-"""Tests for config loader."""
+"""Tests for config loader (new Pydantic-based config)."""
 
 from __future__ import annotations
 
-import pytest
-import yaml
+from pathlib import Path
+from typing import Any
 
-from aiida_relax_project.config import (
-    CalculatorConfig,
+import pytest
+import tomllib
+
+from aiida_relax_project.core.config import (
+    ProjectConfig,
+    VaspConfig,
+    Cp2kConfig,
+    RelaxConfig,
+    VolumeScanConfig,
+    MetadataOptions,
     load_config,
-    _deep_merge,
-    _dict_to_config,
+    _merge_configs,
 )
 
 
-class TestDeepMerge:
-    """Test dictionary deep merge functionality."""
+class TestMergeConfigs:
+    """Test dictionary merge functionality."""
 
     def test_simple_merge(self):
         base = {"a": 1, "b": 2}
         overlay = {"b": 3, "c": 4}
-        result = _deep_merge(base, overlay)
+        result = _merge_configs(base, overlay)
         assert result == {"a": 1, "b": 3, "c": 4}
 
     def test_nested_merge(self):
         base = {"a": {"x": 1, "y": 2}}
         overlay = {"a": {"y": 3, "z": 4}}
-        result = _deep_merge(base, overlay)
+        result = _merge_configs(base, overlay)
         assert result == {"a": {"x": 1, "y": 3, "z": 4}}
 
 
+class TestProjectConfig:
+    """Test ProjectConfig creation and validation."""
+
+    def test_default_config(self):
+        config = ProjectConfig()
+        assert config.engine == "vasp"
+        assert config.code_label == "localhost"
+        assert config.vasp.potential_family == "PBE.54"
+        assert config.vasp.kpoints_mesh == [4, 4, 4]
+        assert config.cp2k.kpoints_mesh == [4, 1, 4]
+
+    def test_cp2k_engine(self):
+        config = ProjectConfig(engine="cp2k")
+        assert config.engine == "cp2k"
+        assert config.get_kpoints_mesh() == [4, 1, 4]
+
+    def test_vasp_engine_kpoints(self):
+        config = ProjectConfig(engine="vasp")
+        assert config.get_kpoints_mesh() == [4, 4, 4]
+
+    def test_invalid_engine_fails(self):
+        with pytest.raises(ValueError):
+            ProjectConfig(engine="quantum_espresso")
+
+    def test_metadata_options_defaults(self):
+        config = ProjectConfig()
+        opts = config.metadata_options
+        assert opts.num_machines == 1
+        assert opts.num_mpiprocs_per_machine == 8
+        assert opts.max_wallclock_seconds == 3600
+        assert opts.withmpi is True
+
+    def test_metadata_options_preset(self):
+        config = ProjectConfig(resource_preset="high_memory")
+        opts = config.metadata_options
+        assert opts.num_machines == 2
+
+    def test_to_dict(self):
+        config = ProjectConfig(engine="vasp")
+        d = config.to_dict()
+        assert d["engine"] == "vasp"
+        assert "vasp" in d
+        assert "cp2k" in d
+        assert "metadata_options" in d
+
+    def test_get_potential_mapping(self):
+        config = ProjectConfig()
+        mapping = config.get_potential_mapping(["Si", "Ge"])
+        assert mapping == {"Si": "Si", "Ge": "Ge"}
+
+
+class TestVaspConfig:
+    """Test VASP-specific configuration."""
+
+    def test_defaults(self):
+        cfg = VaspConfig()
+        assert cfg.kpoints_mesh == [4, 4, 4]
+        assert cfg.default_encut == 400
+        assert cfg.default_isif == 3
+
+    def test_kpoints_mesh_validates_length(self):
+        with pytest.raises(ValueError):
+            VaspConfig(kpoints_mesh=[4, 4])
+
+    def test_kpoints_mesh_validates_positive(self):
+        with pytest.raises(ValueError):
+            VaspConfig(kpoints_mesh=[4, 0, 4])
+
+
+class TestCp2kConfig:
+    """Test CP2K-specific configuration."""
+
+    def test_defaults(self):
+        cfg = Cp2kConfig()
+        assert cfg.kpoints_mesh == [4, 1, 4]
+        assert cfg.default_cutoff == 400
+        assert cfg.default_eps_scf == 1e-6
+
+
+class TestMetadataOptions:
+    """Test MetadataOptions validation."""
+
+    def test_valid(self):
+        opts = MetadataOptions(num_machines=2, num_mpiprocs_per_machine=16)
+        assert opts.num_machines == 2
+
+    def test_num_machines_must_be_positive(self):
+        with pytest.raises(ValueError):
+            MetadataOptions(num_machines=0)
+
+    def test_min_wallclock(self):
+        with pytest.raises(ValueError):
+            MetadataOptions(max_wallclock_seconds=30)
+
+    def test_to_dict(self):
+        opts = MetadataOptions(num_machines=2, num_mpiprocs_per_machine=16)
+        d = opts.to_dict()
+        assert d["resources"]["num_machines"] == 2
+        assert d["resources"]["num_mpiprocs_per_machine"] == 16
+        assert d["max_wallclock_seconds"] == 3600
+
+
 class TestLoadConfig:
-    """Test configuration loading."""
+    """Test config loading from TOML files."""
 
-    def test_load_vasp_config(self, tmp_path):
-        config_data = {
-            "engine": "vasp",
-            "description": "Test VASP config",
-            "vasp": {
-                "code_label": "vasp@localhost",
-                "potential_family": "PBE.54",
-                "parameters": {"ENCUT": 500},
-            },
-            "optimade": {"filter": None, "max_structures": None},
-        }
-
-        config_file = tmp_path / "test_vasp.yaml"
-        with open(config_file, "w") as f:
-            yaml.dump(config_data, f)
-
-        config = load_config(config_file)
-
-        assert config.engine == "vasp"
-        assert config.vasp.code_label == "vasp@localhost"
-        assert config.vasp.parameters["ENCUT"] == 500
-
-    def test_load_cp2k_config(self, tmp_path):
+    def test_load_from_file(self, tmp_path):
         config_data = {
             "engine": "cp2k",
-            "description": "Test CP2K config",
+            "code_label": "mycluster",
+            "vasp": {"potential_family": "PBE.54"},
             "cp2k": {
-                "code_label": "cp2k@localhost",
-                "kinds": [
-                    {
-                        "element": "Si",
-                        "basis_set": "DZVP-MOLOPT-SR-GTH-q4",
-                        "potential": "GTH-PBE-q4",
-                    },
-                ],
-                "parameters": {"CUTOFF": 500},
+                "kpoints_mesh": [2, 1, 2],
+                "default_cutoff": 500,
             },
-            "optimade": {"filter": None, "max_structures": None},
         }
-
-        config_file = tmp_path / "test_cp2k.yaml"
-        with open(config_file, "w") as f:
-            yaml.dump(config_data, f)
+        config_file = tmp_path / "config.toml"
+        with open(config_file, "wb") as f:
+            tomllib.dump(config_data, f)
 
         config = load_config(config_file)
-
         assert config.engine == "cp2k"
-        assert config.cp2k.code_label == "cp2k@localhost"
-        assert len(config.cp2k.kinds) == 1
-        assert config.cp2k.kinds[0].element == "Si"
+        assert config.code_label == "mycluster"
+        assert config.cp2k.default_cutoff == 500
+        assert config.cp2k.kpoints_mesh == [2, 1, 2]
 
-    def test_file_not_found(self):
-        with pytest.raises(FileNotFoundError):
-            load_config("nonexistent.yaml")
+    def test_file_not_found_fallback(self):
+        config = load_config("/nonexistent/config.toml")
+        assert isinstance(config, ProjectConfig)
 
-
-class TestCalculatorConfigValidation:
-    """Test configuration validation."""
-
-    def test_valid_vasp_config(self):
-        config_data = {
-            "engine": "vasp",
-            "optimade": {"filter": None, "max_structures": None},
-            "vasp": {
-                "code_label": "vasp@localhost",
-            },
-        }
-        config = _dict_to_config(config_data)
-        config.validate()
-        assert config.engine == "vasp"
-
-    def test_valid_cp2k_config(self):
-        config_data = {
-            "engine": "cp2k",
-            "optimade": {"filter": None, "max_structures": None},
-            "cp2k": {
-                "code_label": "cp2k@localhost",
-            },
-        }
-        config = _dict_to_config(config_data)
-        config.validate()
-        assert config.engine == "cp2k"
-
-    def test_invalid_engine(self):
-        config_data = {
-            "engine": "quantum_espresso",
-            "optimade": {"filter": None, "max_structures": None},
-        }
-        config = _dict_to_config(config_data)
-        with pytest.raises(ValueError, match="engine must be 'vasp' or 'cp2k'"):
-            config.validate()
-
-    def test_vasp_without_vasp_section(self):
-        config_data = {
-            "engine": "vasp",
-            "optimade": {"filter": None, "max_structures": None},
-        }
-        config = _dict_to_config(config_data)
-        with pytest.raises(ValueError, match="engine=vasp requires vasp section"):
-            config.validate()
-
-    def test_no_structure_source(self):
-        config_data = {
-            "engine": "vasp",
-            "optimade": {"filter": None, "max_structures": None},
-            "vasp": {"code_label": "vasp@localhost"},
-        }
-        config = _dict_to_config(config_data)
-        with pytest.raises(ValueError, match="must specify one of"):
-            config.validate()
+    def test_merge_configs(self):
+        base = {"engine": "vasp", "vasp": {"default_encut": 400}}
+        overlay = {"vasp": {"default_encut": 500, "default_isif": 2}}
+        merged = _merge_configs(base, overlay)
+        assert merged["engine"] == "vasp"
+        assert merged["vasp"]["default_encut"] == 500
+        assert merged["vasp"]["default_isif"] == 2

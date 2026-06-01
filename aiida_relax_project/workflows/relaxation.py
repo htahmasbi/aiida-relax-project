@@ -13,7 +13,7 @@ from aiida.engine import WorkChain, ToContext
 from aiida.plugins import WorkflowFactory
 
 from aiida_relax_project.core.engine import EngineFactory
-from aiida_relax_project.core.enums import EngineType, RelaxType
+from aiida_relax_project.core.enums import RelaxType
 from aiida_relax_project.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -175,8 +175,8 @@ class DynamicRelaxWorkChain(WorkChain):
             )
             return
 
-        self.ctx.engine = EngineType(engine_str)
-        self.ctx.relax_type = RelaxType(relax_type_str)
+        self.ctx.engine = engine_str
+        self.ctx.relax_type = relax_type_str
 
         logger.info("Using engine: %s, relaxation type: %s", self.ctx.engine, self.ctx.relax_type)
 
@@ -219,7 +219,7 @@ class DynamicRelaxWorkChain(WorkChain):
 
         relax_settings = adapter.get_relaxation_settings(relax_type)
 
-        if engine == EngineType.VASP:
+        if engine == "vasp":
             inputs = {
                 "structure": self.inputs.structure,
                 "parameters": params,
@@ -232,7 +232,7 @@ class DynamicRelaxWorkChain(WorkChain):
             if "kpoints" in self.inputs:
                 inputs["kpoints"] = self.inputs.kpoints
 
-        elif engine == EngineType.CP2K:
+        elif engine == "cp2k":
             inputs = {
                 "structure": self.inputs.structure,
                 "parameters": params,
@@ -254,7 +254,7 @@ class DynamicRelaxWorkChain(WorkChain):
 
         logger.info(
             "Submitting %s relaxation workflow for structure %s (type=%s)",
-            self.ctx.engine.value.upper(),
+            self.ctx.engine.upper(),
             self.inputs.structure.pk,
             self.ctx.relax_type,
         )

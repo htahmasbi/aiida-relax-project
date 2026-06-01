@@ -102,7 +102,7 @@ class VaspAdapter(BaseEngineAdapter):
         encut = generic_params.get("encut", 400)
         prec = generic_params.get("prec", "Normal")
         ediff = generic_params.get("ediff", 1e-5)
-        ismeart = generic_params.get("ismeart", 0)
+        ismear = generic_params.get("ismear", 0)
         sigma = generic_params.get("sigma", 0.05)
         max_scf = generic_params.get("max_scf", generic_params.get("max_steps", 200))
         xc = generic_params.get("xc_functional", "PBE")
@@ -111,7 +111,7 @@ class VaspAdapter(BaseEngineAdapter):
             "ENCUT": encut,
             "PREC": prec,
             "EDIFF": ediff,
-            "ISMEAR": ismeart,
+            "ISMEAR": ismear,
             "SIGMA": sigma,
             "NELM": max_scf,
             "LCHARG": False,

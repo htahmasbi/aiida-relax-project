@@ -14,7 +14,7 @@ from aiida.engine import WorkChain, ToContext
 from aiida.plugins import CalculationFactory
 
 from aiida_relax_project.core.engine import EngineFactory, BaseEngineAdapter
-from aiida_relax_project.core.enums import EngineType
+from aiida_relax_project.core.enums import EngineType as EngineTypeLiteral
 from aiida_relax_project.core.exceptions import (
     EngineError,
     WorkflowExecutionError,
@@ -285,7 +285,7 @@ class DynamicSinglePointWorkChain(WorkChain):
             self.abort_nowait(f"Unknown engine: {engine_str}. Must be 'vasp' or 'cp2k'.")
             return
 
-        self.ctx.engine = EngineType(engine_str)
+        self.ctx.engine = engine_str
         logger.info("Using engine: %s", self.ctx.engine)
 
         adapter = EngineFactory.create(self.ctx.engine)
@@ -332,14 +332,14 @@ class DynamicSinglePointWorkChain(WorkChain):
             "metadata": {"options": options},
         }
 
-        if engine == EngineType.VASP:
+        if engine == "vasp":
             if "kpoints" in self.inputs:
                 inputs["kpoints"] = self.inputs.kpoints
             if "potential_family" in self.inputs:
                 inputs["potential_family"] = self.inputs.potential_family
             if "potential_mapping" in self.inputs:
                 inputs["potential_mapping"] = self.inputs.potential_mapping
-        elif engine == EngineType.CP2K:
+        elif engine == "cp2k":
             if "kpoints" in self.inputs:
                 inputs["kpoints"] = self.inputs.kpoints
 

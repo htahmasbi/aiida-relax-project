@@ -29,18 +29,16 @@ Environment variables:
 """
 
 import argparse
-import os
 from typing import Optional
 
 from aiida import load_profile, orm
 from aiida.engine import submit
 from aiida.plugins import DataFactory
 
+from aiida_relax_project.core.config import get_config
 from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
 from aiida_relax_project.workflows.relaxation import DynamicRelaxWorkChain
 from aiida_relax_project.workflows.volume_scan import DynamicVolumeScanWorkChain
-from aiida_relax_project.workflows.base import EngineType
-from aiida_relax_project.config import get_config
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 from aiida_relax_project.transformations.structures import rotate_xy_to_xz, make_supercell_3x3
 
@@ -86,20 +84,15 @@ def create_example_structure(element: str = "Si") -> StructureData:
     return structure
 
 
-def create_kpoints(mesh: list, engine: EngineType) -> orm.KpointsData:
-    """Create k-points data for the engine."""
+def create_kpoints(mesh: list) -> orm.KpointsData:
+    """Create k-points data."""
     kpoints = orm.KpointsData()
-
-    if engine == EngineType.VASP:
-        kpoints.set_kpoints_mesh(mesh)
-    else:
-        kpoints.set_kpoints_mesh(mesh)
-
+    kpoints.set_kpoints_mesh(mesh)
     return kpoints
 
 
 def launch_single_point(
-    engine: EngineType,
+    engine: str,
     code_label: str,
     structure: StructureData,
     parameters: dict,
@@ -108,16 +101,16 @@ def launch_single_point(
     metadata_options: Optional[dict] = None,
 ):
     """Launch a single-point calculation."""
-    code = orm.load_code(f"{engine.value}@{code_label}")
+    code = orm.load_code(f"{engine}@{code_label}")
 
     params = orm.Dict(dict=parameters)
 
     kpoints = None
     if kpoints_mesh:
-        kpoints = create_kpoints(kpoints_mesh, engine)
+        kpoints = create_kpoints(kpoints_mesh)
 
     inputs = {
-        "engine": orm.Str(engine.value),
+        "engine": orm.Str(engine),
         "code": code,
         "structure": structure,
         "parameters": params,
@@ -127,7 +120,7 @@ def launch_single_point(
     if kpoints is not None:
         inputs["kpoints"] = kpoints
 
-    if engine == EngineType.VASP:
+    if engine == "vasp":
         inputs["potential_family"] = orm.Str("PBE.54")
         inputs["potential_mapping"] = orm.Dict(dict={"Si": "Si"})
 
@@ -135,12 +128,12 @@ def launch_single_point(
         inputs["metadata_options"] = orm.Dict(dict=metadata_options)
 
     node = submit(DynamicSinglePointWorkChain, **inputs)
-    print(f"Submitted DynamicSinglePointWorkChain<{node.pk}> for {engine.value.upper()}")
+    print(f"Submitted DynamicSinglePointWorkChain<{node.pk}> for {engine.upper()}")
     return node
 
 
 def launch_relaxation(
-    engine: EngineType,
+    engine: str,
     code_label: str,
     structure: StructureData,
     parameters: dict,
@@ -150,16 +143,16 @@ def launch_relaxation(
     metadata_options: Optional[dict] = None,
 ):
     """Launch a relaxation calculation."""
-    code = orm.load_code(f"{engine.value}@{code_label}")
+    code = orm.load_code(f"{engine}@{code_label}")
 
     params = orm.Dict(dict=parameters)
 
     kpoints = None
     if kpoints_mesh:
-        kpoints = create_kpoints(kpoints_mesh, engine)
+        kpoints = create_kpoints(kpoints_mesh)
 
     inputs = {
-        "engine": orm.Str(engine.value),
+        "engine": orm.Str(engine),
         "code": code,
         "structure": structure,
         "parameters": params,
@@ -170,7 +163,7 @@ def launch_relaxation(
     if kpoints is not None:
         inputs["kpoints"] = kpoints
 
-    if engine == EngineType.VASP:
+    if engine == "vasp":
         inputs["potential_family"] = orm.Str("PBE.54")
         inputs["potential_mapping"] = orm.Dict(dict={"Si": "Si"})
 
@@ -178,12 +171,12 @@ def launch_relaxation(
         inputs["metadata_options"] = orm.Dict(dict=metadata_options)
 
     node = submit(DynamicRelaxWorkChain, **inputs)
-    print(f"Submitted DynamicRelaxWorkChain<{node.pk}> for {engine.value.upper()} (relax_type={relax_type})")
+    print(f"Submitted DynamicRelaxWorkChain<{node.pk}> for {engine.upper()} (relax_type={relax_type})")
     return node
 
 
 def launch_volume_scan(
-    engine: EngineType,
+    engine: str,
     code_label: str,
     group_label: str,
     parameters: dict,
@@ -194,7 +187,7 @@ def launch_volume_scan(
     max_structures: Optional[int] = None,
 ):
     """Launch a volume scan for structures in a group."""
-    code = orm.load_code(f"{engine.value}@{code_label}")
+    code = orm.load_code(f"{engine}@{code_label}")
 
     try:
         group = orm.Group.collection.get(label=group_label)
@@ -220,10 +213,10 @@ def launch_volume_scan(
 
     kpoints = None
     if kpoints_mesh:
-        kpoints = create_kpoints(kpoints_mesh, engine)
+        kpoints = create_kpoints(kpoints_mesh)
 
     inputs = {
-        "engine": orm.Str(engine.value),
+        "engine": orm.Str(engine),
         "structure_group": group,
         "code": code,
         "parameters": params,
@@ -234,7 +227,7 @@ def launch_volume_scan(
     if kpoints is not None:
         inputs["kpoints"] = kpoints
 
-    if engine == EngineType.VASP:
+    if engine == "vasp":
         inputs["potential_family"] = orm.Str("PBE.54")
         inputs["potential_mapping"] = orm.Dict(dict={"B": "B", "N": "N"})
 
@@ -242,7 +235,7 @@ def launch_volume_scan(
         inputs["metadata_options"] = orm.Dict(dict=metadata_options)
 
     node = submit(DynamicVolumeScanWorkChain, **inputs)
-    print(f"Submitted DynamicVolumeScanWorkChain<{node.pk}> for {engine.value.upper()}")
+    print(f"Submitted DynamicVolumeScanWorkChain<{node.pk}> for {engine.upper()}")
     return node
 
 
@@ -346,19 +339,17 @@ def main():
 
     load_profile()
 
-    engine_str = args.engine or config.engine
-    engine = EngineType(engine_str)
+    engine = args.engine or config.engine
 
     if args.kpoints:
         kpoints_mesh = [int(x) for x in args.kpoints.split(",")]
     else:
         kpoints_mesh = config.get_kpoints_mesh()
 
-    metadata_options = None
     if args.metadata:
         metadata_options = parse_generic_params(args.metadata)
     else:
-        metadata_options = config.get_metadata_options()
+        metadata_options = config.metadata_options.to_dict()
 
     parameters = parse_generic_params(args.generic_params) if args.generic_params else {}
 
