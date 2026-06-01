@@ -4,12 +4,11 @@ from aiida.plugins import DataFactory
 
 from aiida_relax_project.workflows.single_point import VaspSinglePointWorkChain
 
-load_profile()
-
 StructureData = DataFactory("core.structure")
 
 
 def main():
+    load_profile()
     code = orm.load_code("vasp@localhost")  # change this to your configured code label
 
     structure = StructureData()

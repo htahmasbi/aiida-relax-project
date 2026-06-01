@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from aiida import load_profile, orm
 from aiida.engine import submit
 from aiida.plugins import CalculationFactory, DataFactory
 from aiida.orm import Dict, KpointsData
+from pymatgen.core import Structure
 
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 from aiida_relax_project.transformations.structures import (
@@ -14,7 +17,7 @@ Cp2kCalculation = CalculationFactory("cp2k")
 StructureData = DataFactory("core.structure")
 
 
-def modifier(structure):
+def modifier(structure: Structure) -> Structure:
     """Modify each MC2D pymatgen Structure before CP2K."""
     structure = rotate_xy_to_xz(structure, vacuum=20.0)
     structure = make_supercell_3x3(structure)
@@ -115,7 +118,9 @@ def main():
         builder.kpoints = make_kpoints()
 
         builder.metadata.label = f"CP2K {item['formula']} {item['id']}"
-        builder.metadata.description = "CP2K single-point calculation for MC2D test set."
+        builder.metadata.description = (
+            "CP2K single-point calculation for MC2D test set."
+        )
 
         builder.metadata.options.resources = {
             "num_machines": 1,
