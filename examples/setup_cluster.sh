@@ -64,8 +64,7 @@ verdi computer setup --non-interactive \
     --scheduler "${SCHEDULER}" \
     --work-dir "${WORKDIR}" \
     --mpirun-command "mpirun" \
-    --mpiprocs-per-machine "${MPI_PROCS_PER_MACHINE}" \
-    --num-machines "${NUM_MACHINES}"
+    --mpiprocs-per-machine "${MPI_PROCS_PER_MACHINE}"
 
 echo ""
 echo "=== 3. Configuring SSH transport for ${COMPUTER_LABEL} ==="
