@@ -6,6 +6,7 @@ from aiida.plugins import CalculationFactory, DataFactory
 from aiida.orm import Dict, KpointsData
 from pymatgen.core import Structure
 
+from aiida_relax_project.core.config import get_config
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 from aiida_relax_project.transformations.structures import (
     rotate_xy_to_xz,
@@ -91,7 +92,9 @@ def make_kpoints():
 def main():
     load_profile()
 
-    code = orm.load_code("cp2k@localhost")  # change this to your CP2K code label
+    config = get_config()
+    code_label = f"cp2k@{config.code_label}"
+    code = orm.load_code(code_label)
 
     group, _ = orm.Group.collection.get_or_create("mc2d_bn_cp2k_test_5")
 
