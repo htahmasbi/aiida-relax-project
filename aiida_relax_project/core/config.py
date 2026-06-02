@@ -223,6 +223,14 @@ def load_config(config_path: str | Path | None = None) -> ProjectConfig:
     if config_path and Path(config_path).exists():
         with open(config_path, "rb") as f:
             config_data = tomllib.load(f)
+
+        # Unwrap [default] section into top-level keys (so engine, code_label
+        # etc. are read by ProjectConfig, not lost under "default").
+        if "default" in config_data:
+            defaults = config_data.pop("default")
+            for k, v in defaults.items():
+                config_data.setdefault(k, v)
+
         logger.info(f"Loaded configuration from {config_path}")
 
     env_overrides = _parse_env_overrides()
