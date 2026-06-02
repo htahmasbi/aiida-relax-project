@@ -23,7 +23,7 @@ COMPUTER_LABEL="rosi5"
 COMPUTER_HOST="rosi5.fz-rossendorf.de"
 COMPUTER_DESCRIPTION="FZ Rossendorf ROSI5 cluster (SLURM)"
 SCHEDULER="slurm"
-TRANSPORT="ssh"
+TRANSPORT="core.ssh"
 SSH_USER="tahmas41"
 SSH_KEY="~/.ssh/id_rsa"
 WORKDIR="/bigdata/casus/fwuk/tahmas41/work"
@@ -69,9 +69,9 @@ verdi computer setup --non-interactive \
 echo ""
 echo "=== 3. Configuring SSH transport for ${COMPUTER_LABEL} ==="
 
-verdi computer configure ssh "${COMPUTER_LABEL}" --non-interactive \
+verdi computer configure core.ssh "${COMPUTER_LABEL}" --non-interactive \
     --username "${SSH_USER}" \
-    --key-file "${SSH_KEY}" \
+    --key-filename "${SSH_KEY}" \
     --allow-agent \
     --look-for-keys
 
@@ -87,7 +87,7 @@ verdi code delete "${CP2K_CODE_LABEL}@${COMPUTER_LABEL}" 2>/dev/null || true
 verdi code setup --non-interactive \
     --label "${CP2K_CODE_LABEL}" \
     --computer "${COMPUTER_LABEL}" \
-    --remote-computer-exec "${CP2K_EXEC}" \
+    --remote-abs-path "${CP2K_EXEC}" \
     --input-plugin "cp2k" \
     --prepend-text "${CP2K_PREPEND_TEXT}"
 
