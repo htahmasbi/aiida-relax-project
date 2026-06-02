@@ -63,7 +63,7 @@ verdi computer setup --non-interactive \
     --transport "${TRANSPORT}" \
     --scheduler "${SCHEDULER}" \
     --work-dir "${WORKDIR}" \
-    --mpirun "mpirun" \
+    --mpirun-command "mpirun" \
     --mpiprocs-per-machine "${MPI_PROCS_PER_MACHINE}" \
     --num-machines "${NUM_MACHINES}"
 
