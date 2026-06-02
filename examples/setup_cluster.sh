@@ -26,7 +26,7 @@ SCHEDULER="core.slurm"
 TRANSPORT="core.ssh_async"
 SSH_USER="tahmas41"
 SSH_KEY="~/.ssh/id_rsa"
-WORKDIR="/bigdata/casus/fwuk/tahmas41/work"
+WORKDIR="/bigdata/casus/fwuk/tahmas41/work/aiida-runs"
 MPI_PROCS_PER_MACHINE=64
 NUM_MACHINES=1
 
