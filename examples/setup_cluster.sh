@@ -22,8 +22,8 @@ set -euo pipefail
 COMPUTER_LABEL="rosi5"
 COMPUTER_HOST="rosi5.fz-rossendorf.de"
 COMPUTER_DESCRIPTION="FZ Rossendorf ROSI5 cluster (SLURM)"
-SCHEDULER="slurm"
-TRANSPORT="core.ssh"
+SCHEDULER="core.slurm"
+TRANSPORT="core.ssh_async"
 SSH_USER="tahmas41"
 SSH_KEY="~/.ssh/id_rsa"
 WORKDIR="/bigdata/casus/fwuk/tahmas41/work"
@@ -69,11 +69,8 @@ verdi computer setup --non-interactive \
 echo ""
 echo "=== 3. Configuring SSH transport for ${COMPUTER_LABEL} ==="
 
-verdi computer configure core.ssh "${COMPUTER_LABEL}" --non-interactive \
-    --username "${SSH_USER}" \
-    --key-filename "${SSH_KEY}" \
-    --allow-agent \
-    --look-for-keys
+verdi computer configure core.ssh_async "${COMPUTER_LABEL}" --non-interactive \
+    --host "${COMPUTER_HOST}"
 
 echo ""
 echo "=== 4. Testing connection to ${COMPUTER_LABEL} ==="
