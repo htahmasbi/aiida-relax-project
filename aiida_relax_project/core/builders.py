@@ -343,7 +343,8 @@ def fetch_structures_from_optimade(
         group, _ = orm.Group.collection.get_or_create(group_label)
 
     if elements:
-        filter_str = f'elements HAS ALL "{'","'.join(elements)}" AND nelements={len(elements)}'
+        quoted = '","'.join(elements)
+        filter_str = f'elements HAS ALL "{quoted}" AND nelements={len(elements)}'
     else:
         filter_str = 'nelements=2'
 
