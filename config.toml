@@ -7,9 +7,9 @@
 # =============================================================================
 
 [default]
-engine = "vasp"
-code_label = "localhost"
-max_wallclock_seconds = 3600
+engine = "cp2k"
+code_label = "rosi5"
+max_wallclock_seconds = 86400
 resource_preset = "default"
 
 # =============================================================================
@@ -43,8 +43,8 @@ N = "N"
 # =============================================================================
 
 [cp2k]
-# K-point mesh (typically [4,1,4] for slab calculations)
-kpoints_mesh = [4, 1, 4]
+# K-point mesh (typical for 2D BN slab: dense in-plane, sparse out-of-plane)
+kpoints_mesh = [24, 1, 24]
 
 # Default Gaussian plane-wave cutoff (Ry)
 default_cutoff = 400
@@ -137,6 +137,10 @@ scf_guess = "ATOMIC"
 # ---------------------------------------------------------------------------
 # CP2K raw_parameters: any nested CP2K input section
 # See examples/cp2k_gw_2d_bn.inp for a complete reference input file.
+#
+# NOTE: When using modules (ml cp2k/master), BASIS_MOLOPT and GTH_POTENTIALS
+# are typically resolved automatically. Only uncomment these if you need
+# custom paths or GW-specific settings.
 # ---------------------------------------------------------------------------
 # Uncomment and adapt the sections below to match your CP2K input.
 #
