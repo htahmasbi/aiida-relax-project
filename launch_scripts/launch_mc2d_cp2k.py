@@ -36,8 +36,9 @@ def make_cp2k_parameters():
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
-                    "BASIS_SET_FILE_NAME": "BASIS_MOLOPT",
-                    "POTENTIAL_FILE_NAME": "GTH_POTENTIALS",
+                    "BASIS_SET_FILE_NAME": "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states",
+                    "BASIS_SET_FILE_NAME": "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI",
+                    "POTENTIAL_FILE_NAME": "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH",
                     "CHARGE": 0,
                     "MULTIPLICITY": 1,
                     "SCF": {
@@ -67,12 +68,14 @@ def make_cp2k_parameters():
                     "KIND": [
                         {
                             "_": "B",
-                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH-q3",
+                            "BASIS_SET ORB": "aug-SZV-MOLOPT-GTH-tier-1",
+                            "BASIS_SET RI_AUX": "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06",
                             "POTENTIAL": "GTH-PBE-q3",
                         },
                         {
                             "_": "N",
-                            "BASIS_SET": "DZVP-MOLOPT-SR-GTH-q5",
+                            "BASIS_SET ORB": "aug-SZV-MOLOPT-GTH-tier-1",
+                            "BASIS_SET RI_AUX": "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06",
                             "POTENTIAL": "GTH-PBE-q5",
                         },
                     ],
