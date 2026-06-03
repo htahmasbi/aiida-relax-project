@@ -19,24 +19,15 @@ from __future__ import annotations
 
 import argparse
 
-from aiida import load_profile, orm
-from aiida.engine import submit
-from aiida.plugins import CalculationFactory, DataFactory
-from aiida.orm import Dict, KpointsData
-
 from aiida_relax_project.core.config import get_config
-from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
-from aiida_relax_project.transformations.structures import (
-    rotate_xy_to_xz,
-    make_supercell_3x3,
-)
-
-Cp2kCalculation = CalculationFactory("cp2k")
-StructureData = DataFactory("core.structure")
 
 
 def modifier(structure):
     """Build a 3×3 supercell then rotate 2D structure to xz-plane."""
+    from aiida_relax_project.transformations.structures import (
+        rotate_xy_to_xz,
+        make_supercell_3x3,
+    )
     structure = make_supercell_3x3(structure)
     structure = rotate_xy_to_xz(structure, vacuum=20.0)
     return structure
@@ -83,9 +74,9 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
             "BASIS_SET ORB": gw.orb_basis,
             "BASIS_SET RI_AUX": cfg.ri_basis,
             "POTENTIAL": cfg.potential,
-        })
+        }        )
 
-    return Dict({
+    return {
         "GLOBAL": {
             "RUN_TYPE": "ENERGY",
             "PRINT_LEVEL": "MEDIUM",
@@ -154,10 +145,10 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
                 "KIND": kinds,
             },
         },
-    })
+    }
 
 
-def main():
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Launch CP2K GW + bandstructure for MC2D BN structures."
     )
@@ -184,18 +175,38 @@ def main():
         help="Computer@code label (default: from config.toml)",
     )
     parser.add_argument(
+        "--num-nodes", type=int, default=1,
+        help="Number of compute nodes (default: 1)",
+    )
+    parser.add_argument(
+        "--tasks-per-node", type=int, default=16,
+        help="MPI tasks per node (default: 16)",
+    )
+    parser.add_argument(
         "--show-config", action="store_true",
         help="Show GW configuration and exit",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    config = get_config()
+
+def main():
+    args = parse_args()
 
     if args.show_config:
+        config = get_config()
         print("GW configuration:")
         for field, value in config.gw.model_dump().items():
             print(f"  {field}: {value}")
         return
+
+    from aiida import load_profile, orm
+    from aiida.engine import submit
+    from aiida.plugins import CalculationFactory, DataFactory
+    from aiida.orm import Dict
+    from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
+
+    Cp2kCalculation = CalculationFactory("cp2k")
+    StructureData = DataFactory("core.structure")
 
     load_profile()
 
@@ -215,7 +226,7 @@ def main():
     for item in data:
         pymatgen_structure = item["structure"]
 
-        parameters = make_gw_parameters(gw, pymatgen_structure, scf_guess=args.scf_guess)
+        parameters = Dict(make_gw_parameters(gw, pymatgen_structure, scf_guess=args.scf_guess))
 
         structure = StructureData(pymatgen=pymatgen_structure)
         structure.label = f"MC2D GW {item['formula']} {item['id']} xz 3x3"
@@ -235,8 +246,8 @@ def main():
         )
 
         builder.metadata.options.resources = {
-            "num_machines": 1,
-            "num_mpiprocs_per_machine": 16,
+            "num_machines": args.num_nodes,
+            "num_mpiprocs_per_machine": args.tasks_per_node,
         }
         builder.metadata.options.max_wallclock_seconds = 86400
         builder.metadata.options.withmpi = True
