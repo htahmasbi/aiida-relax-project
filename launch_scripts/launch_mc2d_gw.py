@@ -53,11 +53,11 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
         if gw.auto_resolve:
             resolved = gw.resolve_elements(set(missing))
             settings.update(resolved)
-            print(
-                f"  Auto-resolved for: "
-                f"{', '.join(f'{el}(ri={cfg.ri_basis[:15]}..., pot={cfg.potential})'
-                for el, cfg in sorted(resolved.items()))}"
-            )
+            descs = [
+                "%s(ri=%s..., pot=%s)" % (el, cfg.ri_basis[:15], cfg.potential)
+                for el, cfg in sorted(resolved.items())
+            ]
+            print("  Auto-resolved for: " + ", ".join(descs))
         else:
             raise ValueError(
                 f"No element_settings configured for {missing}. "
