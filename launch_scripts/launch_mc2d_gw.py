@@ -192,8 +192,9 @@ def parse_args():
 def main():
     args = parse_args()
 
+    config = get_config()
+
     if args.show_config:
-        config = get_config()
         print("GW configuration:")
         for field, value in config.gw.model_dump().items():
             print(f"  {field}: {value}")
