@@ -126,8 +126,8 @@ class GwConfig(BaseModel):
     potential_file: str = Field(
         default="/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
     )
-    kpoints_mesh: list[int] = Field(default_factory=lambda: [24, 1, 24])
-    kpoints_w: list[int] = Field(default_factory=lambda: [24, 1, 24])
+    kpoints_mesh: list[int] = Field(default_factory=lambda: [12, 1, 12])
+    kpoints_w: list[int] = Field(default_factory=lambda: [12, 1, 12])
     periodic: str = Field(default="XZ")
     poisson_solver: str = Field(default="WAVELET")
     cutoff: int = Field(default=400, ge=0)
@@ -140,7 +140,7 @@ class GwConfig(BaseModel):
     mixing_beta: float = Field(default=0.8)
     mixing_nbroyden: int = Field(default=10)
     num_time_freq: int = Field(default=10, ge=1)
-    memory_per_proc: int = Field(default=300, ge=1)
+    memory_per_proc: int = Field(default=600, ge=1)
     eps_filter: float = Field(default=1.0e-6, gt=0)
     cutoff_radius_ri: int = Field(default=5, ge=1)
     regularization_ri: float = Field(default=0.01, gt=0)
