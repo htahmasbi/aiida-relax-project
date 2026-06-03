@@ -1,9 +1,11 @@
-"""Launch GW + bandstructure calculations for MC2D BN structures with CP2K.
+"""Launch GW + bandstructure calculations for MC2D structures with CP2K.
 
 Usage:
     python launch_mc2d_gw.py
     python launch_mc2d_gw.py --max-structures 10
+    python launch_mc2d_gw.py --filter 'elements HAS ALL "B","N" AND nelements=2'
     python launch_mc2d_gw.py --group my_gw_group --scf-guess RESTART
+    python launch_mc2d_gw.py --filter 'chemical_formula_reduced="BN"'
 
 The GW calculation uses a single CP2K run that performs both the SCF and the
 GW correction / bandstructure in one job.  For a restart from a previous
@@ -138,6 +140,11 @@ def main():
         help="Maximum number of structures to process (default: 5)",
     )
     parser.add_argument(
+        "--filter", type=str,
+        default='elements HAS ALL "B","N" AND nelements=2',
+        help="OPTIMADE filter string (default: binary BN)",
+    )
+    parser.add_argument(
         "--group", type=str, default="mc2d_bn_gw",
         help="AiiDA group label for the structures (default: mc2d_bn_gw)",
     )
@@ -172,7 +179,7 @@ def main():
     group, _ = orm.Group.collection.get_or_create(args.group)
 
     data = fetch_mc2d_structures(
-        optimade_filter='elements HAS ALL "B","N" AND nelements=2',
+        optimade_filter=args.filter,
         max_structures=args.max_structures,
         modifier=modifier,
     )
