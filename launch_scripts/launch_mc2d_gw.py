@@ -80,7 +80,9 @@ def make_gw_parameters(gw, scf_guess="ATOMIC"):
                         "NBROYDEN": gw.mixing_nbroyden,
                     },
                     "PRINT": {
-                        "RESTART": "ON",
+                        "RESTART": {
+                            "_": "ON",
+                        },
                     },
                 },
                 "XC": {
