@@ -46,19 +46,38 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
     """Build the full CP2K input dict for a GW + bandstructure run.
 
     KIND sections are generated dynamically from the unique elements
-    present in *structure* (a pymatgen Structure).
+    present in *structure* (a pymatgen Structure).  Per-element settings
+    (RI basis + potential) are looked up from *gw.element_settings*;
+    if *gw.auto_resolve* is True and a setting is missing, it is resolved
+    automatically from the configured files.
     """
     mesh_str = " ".join(str(k) for k in gw.kpoints_mesh)
-
     elements = sorted({site.species_string for site in structure})
+
+    # --- resolve per-element settings ---------------------------------------
+    settings = dict(gw.element_settings)  # copy — never mutate the original
+    missing = [el for el in elements if el not in settings]
+
+    if missing:
+        if gw.auto_resolve:
+            resolved = gw.resolve_elements(set(missing))
+            settings.update(resolved)
+            print(
+                f"  Auto-resolved for: "
+                f"{', '.join(f'{el}(ri={cfg.ri_basis[:15]}..., pot={cfg.potential})'
+                for el, cfg in sorted(resolved.items()))}"
+            )
+        else:
+            raise ValueError(
+                f"No element_settings configured for {missing}. "
+                f"Either:\n"
+                f"  1. Add entries to [gw.element_settings] in config.toml\n"
+                f"  2. Set auto_resolve = true in [gw] to read from files"
+            )
+
     kinds = []
     for el in elements:
-        cfg = gw.element_settings.get(el)
-        if cfg is None:
-            raise ValueError(
-                f"No GW element_settings configured for {el}. "
-                f"Add an entry to [gw.element_settings.{el}] in config.toml."
-            )
+        cfg = settings[el]
         kinds.append({
             "_": el,
             "BASIS_SET ORB": gw.orb_basis,

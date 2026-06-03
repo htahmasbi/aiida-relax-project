@@ -136,6 +136,7 @@ class TestGwConfig:
 
     def test_defaults(self):
         cfg = GwConfig()
+        assert cfg.auto_resolve is False
         assert cfg.kpoints_mesh == [12, 1, 12]
         assert cfg.kpoints_w == [12, 1, 12]
         assert cfg.cutoff == 400
@@ -146,6 +147,14 @@ class TestGwConfig:
         assert "N" in cfg.element_settings
         assert cfg.element_settings["B"].ri_basis.startswith("RI_")
         assert cfg.element_settings["N"].potential == "GTH-PBE-q5"
+
+    def test_auto_resolve_flag(self):
+        cfg = GwConfig(auto_resolve=True)
+        assert cfg.auto_resolve is True
+
+    def test_empty_element_settings(self):
+        cfg = GwConfig(element_settings={})
+        assert len(cfg.element_settings) == 0
 
     def test_show_config_roundtrip(self, tmp_path):
         import tomli_w

@@ -17,6 +17,11 @@ from pydantic import (
 from pydantic_settings import BaseSettings
 
 from aiida_relax_project.core.enums import RelaxType, RESOURCE_PRESETS
+from aiida_relax_project.utils.cp2k_parsers import (
+    parse_cp2k_data_file,
+    resolve_potential_name,
+    resolve_ri_basis_name,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +127,16 @@ class ElementGwConfig(BaseModel):
 
 
 class GwConfig(BaseModel):
-    """GW-specific configuration for CP2K bandstructure calculations."""
+    """GW-specific configuration for CP2K bandstructure calculations.
 
+    Per-element settings (RI basis + potential) can be:
+      - Set explicitly via ``element_settings`` in config.toml, OR
+      - Resolved automatically by setting ``auto_resolve = true``
+        (the code reads *basis_set_file*, *ri_basis_set_file*, and
+        *potential_file* and extracts the correct name for each element).
+    """
+
+    auto_resolve: bool = False
     basis_set_file: str = Field(
         default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
     )
@@ -169,6 +182,49 @@ class GwConfig(BaseModel):
         "K      0.3333  0.0  0.3333",
         "GAMMA  0.0  0.0  0.0",
     ])
+
+    def resolve_elements(self, elements: set[str]) -> dict[str, ElementGwConfig]:
+        """Auto-resolve per-element settings from the configured files.
+
+        *elements* — set of element symbols (e.g. ``{"B", "N"}``).
+        Requires the three file paths to be readable locally.
+        """
+        result: dict[str, ElementGwConfig] = {}
+        errors: list[str] = []
+
+        for el in sorted(elements):
+            try:
+                potential = resolve_potential_name(self.potential_file, el)
+                if potential is None:
+                    errors.append(
+                        f"{el}: no potential found in {self.potential_file}"
+                    )
+                    continue
+                ri_basis = resolve_ri_basis_name(self.ri_basis_set_file, el)
+                if ri_basis is None:
+                    errors.append(
+                        f"{el}: no RI basis found in {self.ri_basis_set_file}"
+                    )
+                    continue
+                result[el] = ElementGwConfig(ri_basis=ri_basis, potential=potential)
+            except FileNotFoundError as exc:
+                errors.append(f"Cannot read {exc.filename} — file not found locally")
+            except PermissionError as exc:
+                errors.append(f"Cannot read {exc.filename} — permission denied")
+            except Exception as exc:
+                errors.append(f"{el}: {exc}")
+
+        if errors:
+            raise RuntimeError(
+                "Auto-resolve failed for some elements:\n  "
+                + "\n  ".join(errors)
+                + "\n\nEither:\n"
+                "  1. Make the files accessible locally (mount, copy, or sshfs)\n"
+                "  2. Set element_settings manually in config.toml (see [gw.element_settings])\n"
+                "  3. Use the --resolve-remote flag to parse via SSH"
+            )
+
+        return result
 
 
 class ProjectConfig(BaseSettings):

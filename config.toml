@@ -143,13 +143,24 @@ regularization_ri = 0.01
 # Basis sets and potentials per element
 orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
 
-[gw.element_settings.B]
-ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
-potential = "GTH-PBE-q3"
+# Per-element RI basis and potential (default: B and N from code).
+# Add entries for any new elements you need, e.g.:
+#
+# [gw.element_settings.C]
+# ri_basis = "RI_..."
+# potential = "GTH-PBE-q4"
+#
+# [gw.element_settings.Si]
+# ri_basis = "RI_..."
+# potential = "GTH-PBE-q4"
+#
+# [gw.element_settings.O]
+# ri_basis = "RI_..."
+# potential = "GTH-PBE-q6"
 
-[gw.element_settings.N]
-ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
-potential = "GTH-PBE-q5"
+# Alternatively, set auto_resolve = true to read element→name mappings
+# directly from the three file paths (files must be locally accessible):
+# auto_resolve = true
 
 # Bandstructure path (hexagonal BN: GAMMA-M-K-GAMMA)
 bs_npoints = 20
