@@ -36,8 +36,10 @@ def make_cp2k_parameters():
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
-                    "BASIS_SET_FILE_NAME": "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states",
-                    "BASIS_SET_FILE_NAME": "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI",
+                    "BASIS_SET_FILE_NAME": [
+                        "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states",
+                        "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI",
+                    ],
                     "POTENTIAL_FILE_NAME": "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH",
                     "CHARGE": 0,
                     "MULTIPLICITY": 1,
