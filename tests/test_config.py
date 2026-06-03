@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+import tomli_w
 
 from aiida_relax_project.core.config import (
     ProjectConfig,
@@ -113,6 +117,17 @@ class TestCp2kConfig:
         assert cfg.kpoints_mesh == [4, 1, 4]
         assert cfg.default_cutoff == 400
         assert cfg.default_eps_scf == 1e-6
+        assert cfg.ri_basis_set_mapping == {}
+        assert cfg.ri_basis_set_file is None
+
+    def test_ri_basis_set_mapping(self):
+        cfg = Cp2kConfig(ri_basis_set_mapping={"B": "RI_DZVP", "N": "RI_DZVP"})
+        assert cfg.ri_basis_set_mapping["B"] == "RI_DZVP"
+        assert cfg.ri_basis_set_mapping["N"] == "RI_DZVP"
+
+    def test_ri_basis_set_file(self):
+        cfg = Cp2kConfig(ri_basis_set_file="/path/to/RI_BASIS")
+        assert cfg.ri_basis_set_file == "/path/to/RI_BASIS"
 
 
 class TestMetadataOptions:
@@ -153,7 +168,7 @@ class TestLoadConfig:
         }
         config_file = tmp_path / "config.toml"
         with open(config_file, "wb") as f:
-            tomllib.dump(config_data, f)
+            tomli_w.dump(config_data, f)
 
         config = load_config(config_file)
         assert config.engine == "cp2k"

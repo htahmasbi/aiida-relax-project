@@ -138,3 +138,43 @@ class TestCp2kAdapter:
     def test_build_kpoints(self, adapter):
         kpoints = adapter.build_kpoints([4, 4, 4])
         assert kpoints is not None
+
+    def test_build_parameters_with_ri_basis(self, adapter):
+        params = adapter.build_parameters({
+            "basis_set_mapping": {"B": "DZVP", "N": "DZVP"},
+            "ri_basis_set_mapping": {"B": "RI_DZVP", "N": "RI_DZVP"},
+        })
+        params_dict = params.get_dict()
+        subsys = params_dict["FORCE_EVAL"]["SUBSYS"]
+        assert "KIND B" in subsys
+        assert "KIND N" in subsys
+        assert subsys["KIND B"]["BASIS_SET"] == "DZVP"
+        assert subsys["KIND B"]["BASIS_SET RI_AUX"] == "RI_DZVP"
+        assert subsys["KIND N"]["BASIS_SET RI_AUX"] == "RI_DZVP"
+
+    def test_build_parameters_without_ri_basis(self, adapter):
+        params = adapter.build_parameters({
+            "basis_set_mapping": {"B": "DZVP"},
+        })
+        params_dict = params.get_dict()
+        subsys = params_dict["FORCE_EVAL"]["SUBSYS"]
+        assert "KIND B" in subsys
+        assert "BASIS_SET" in subsys["KIND B"]
+        assert "BASIS_SET RI_AUX" not in subsys["KIND B"]
+
+    def test_build_parameters_with_ri_basis_set_file(self, adapter):
+        params = adapter.build_parameters({
+            "basis_set_file": "BASIS_MOLOPT",
+            "ri_basis_set_file": "RI_BASIS",
+        })
+        params_dict = params.get_dict()
+        dft = params_dict["FORCE_EVAL"]["DFT"]
+        assert dft["BASIS_SET_FILE_NAME"] == ["BASIS_MOLOPT", "RI_BASIS"]
+
+    def test_build_parameters_with_single_basis_set_file(self, adapter):
+        params = adapter.build_parameters({
+            "basis_set_file": "BASIS_MOLOPT",
+        })
+        params_dict = params.get_dict()
+        dft = params_dict["FORCE_EVAL"]["DFT"]
+        assert dft["BASIS_SET_FILE_NAME"] == "BASIS_MOLOPT"

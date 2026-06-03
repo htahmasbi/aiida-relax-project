@@ -210,6 +210,7 @@ class Cp2kAdapter(BaseEngineAdapter):
 
         basis_set_mapping = generic_params.get("basis_set_mapping", {})
         potential_mapping = generic_params.get("potential_mapping", {})
+        ri_basis_set_mapping = generic_params.get("ri_basis_set_mapping", {})
 
         subsys: dict[str, Any] = {
             "CELL": {
@@ -219,10 +220,19 @@ class Cp2kAdapter(BaseEngineAdapter):
 
         for element, basis in basis_set_mapping.items():
             potential = potential_mapping.get(element, "GTH-PBE")
-            subsys[f"KIND {element}"] = {
+            kind_section: dict[str, Any] = {
                 "BASIS_SET": basis,
                 "POTENTIAL": potential,
             }
+            ri_basis = ri_basis_set_mapping.get(element)
+            if ri_basis:
+                kind_section["BASIS_SET RI_AUX"] = ri_basis
+            subsys[f"KIND {element}"] = kind_section
+
+        basis_set_file = generic_params.get("basis_set_file", "BASIS_MOLOPT")
+        ri_basis_set_file = generic_params.get("ri_basis_set_file")
+        if ri_basis_set_file:
+            basis_set_file = [basis_set_file, ri_basis_set_file]
 
         cp2k_params: dict[str, Any] = {
             "GLOBAL": {
@@ -233,8 +243,7 @@ class Cp2kAdapter(BaseEngineAdapter):
             "FORCE_EVAL": {
                 "METHOD": "Quickstep",
                 "DFT": {
-                    "BASIS_SET_FILE_NAME": generic_params.get("basis_set_file", "BASIS_MOLOPT"),
-                    "BASIS_SET_FILE_NAME": generic_params.get("basis_set_file", "BASIS_RI_MOLOPT"),
+                    "BASIS_SET_FILE_NAME": basis_set_file,
                     "POTENTIAL_FILE_NAME": generic_params.get("potential_file", "GTH_POTENTIALS"),
                     "CHARGE": charge,
                     "MULTIPLICITY": multiplicity,

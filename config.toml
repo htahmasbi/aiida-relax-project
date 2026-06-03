@@ -50,10 +50,13 @@ kpoints_mesh = [24, 1, 24]
 default_cutoff = 400
 
 # Default SCF convergence threshold
-default_eps_scf = 1.0e-6
+default_eps_scf = 5.0e-7
 
 # Maximum SCF iterations
-default_max_scf = 200
+default_max_scf = 500
+
+# Default SCF initial guess (ATOMIC, RESTART, etc.)
+scf_guess = "RESTART"
 
 # CP2K-specific file names
 basis_set_file = "BASIS_MOLOPT"
@@ -61,13 +64,26 @@ potential_file = "GTH_POTENTIALS"
 
 # Per-element basis set mapping (element -> basis set name)
 [cp2k.basis_set_mapping]
-B = "DZVP-MOLOPT-SR-GTH"
-N = "DZVP-MOLOPT-SR-GTH"
+B = "aug-SZV-MOLOPT-GTH-tier-1"
+N = "aug-SZV-MOLOPT-GTH-tier-1"
 
 # Per-element potential mapping (element -> potential name)
+# Use potentials with charge states for GW (e.g., GTH-PBE-q3 for B, GTH-PBE-q5 for N).
+# For standard (non-GW) DFT, GTH-PBE (auto-detected charge) also works.
 [cp2k.potential_mapping]
-B = "GTH-PBE"
-N = "GTH-PBE"
+B = "GTH-PBE-q3"
+N = "GTH-PBE-q5"
+
+# Per-element RI auxiliary basis set mapping (for GW, TDDFT, etc.)
+# These are the long RI basis names specific to each element's aug-SZV-MOLOPT-GTH-tier-1 ORB basis.
+# Uncomment and set to enable RI-based post-HF methods.
+# [cp2k.ri_basis_set_mapping]
+# B = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
+# N = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
+
+# RI auxiliary basis set file (separate from the main basis set file).
+# When set, both BASIS_SET_FILE_NAME lines are emitted.
+# ri_basis_set_file = "/path/to/RI_BASIS"
 
 # =============================================================================
 # Relaxation Settings
@@ -136,19 +152,24 @@ scf_guess = "ATOMIC"
 
 # ---------------------------------------------------------------------------
 # CP2K raw_parameters: any nested CP2K input section
-# See examples/cp2k_gw_2d_bn.inp for a complete reference input file.
 #
-# NOTE: When using modules (ml cp2k/master), BASIS_MOLOPT and GTH_POTENTIALS
-# are typically resolved automatically. Only uncomment these if you need
-# custom paths or GW-specific settings.
+# When using modules (ml cp2k/master), BASIS_MOLOPT and GTH_POTENTIALS
+# are typically resolved automatically. You only need these if you use
+# custom paths (e.g., augmented basis sets for GW) or GW-specific settings.
+#
+# TWO-STEP WORKFLOW FOR GW:
+#   1. Standard SCF (no GW) to get a wavefunction restart file
+#   2. GW single-point with SCF_GUESS RESTART and PROPERTIES/GW section
+#
+# Below is the complete raw_parameters block matching the working
+# GW input for 2D BN (aug-SZV-MOLOPT-GTH-tier-1 basis).
 # ---------------------------------------------------------------------------
-# Uncomment and adapt the sections below to match your CP2K input.
+# Uncomment and adapt to your system:
 #
 # [cp2k.raw_parameters.GLOBAL]
 # PROJECT = "GW-2D"
 #
 # [cp2k.raw_parameters.FORCE_EVAL.DFT]
-# BASIS_SET_FILE_NAME = ["/path/to/BASIS_MOLOPT", "/path/to/RI_BASIS"]
 # SORT_BASIS = "EXP"
 #
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.QS]
@@ -158,5 +179,45 @@ scf_guess = "ATOMIC"
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.MGRID]
 # REL_CUTOFF = 50
 #
+# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF]
+# SCF_GUESS = "RESTART"
+#
 # [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.MIXING]
-# ALPHA = 0.2; BETA = 1.5; NBROYDEN = 8
+# METHOD = "BROYDEN_MIXING"
+# ALPHA = 0.2
+# BETA = 0.8
+# NBROYDEN = 10
+#
+# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.PRINT]
+# [cp2k.raw_parameters.FORCE_EVAL.DFT.SCF.PRINT.RESTART]
+# _ = "ON"
+#
+# ---------------------------------------------------------------------------
+# GW / Bandstructure — add to the same raw_parameters block
+# ---------------------------------------------------------------------------
+# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES]
+# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE]
+# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.DOS]
+#
+# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.GW]
+# NUM_TIME_FREQ_POINTS = 10
+# MEMORY_PER_PROC = 300
+# EPS_FILTER = 1.0e-6
+# CUTOFF_RADIUS_RI = 5
+# REGULARIZATION_RI = 0.01
+# KPOINTS_W = [24, 1, 24]
+#
+# [cp2k.raw_parameters.FORCE_EVAL.PROPERTIES.BANDSTRUCTURE.BANDSTRUCTURE_PATH]
+# NPOINTS = 20
+# UNITS = "B_VECTOR"
+# SPECIAL_POINT = ["GAMMA  0.0  0.0  0.0",
+#                  "M      0.5  0.0  0.0",
+#                  "K      0.3333  0.0  0.3333",
+#                  "GAMMA  0.0  0.0  0.0"]
+#
+# ---------------------------------------------------------------------------
+# PERIODIC XZ (for 2D materials with vacuum in Y)
+# ---------------------------------------------------------------------------
+# [cp2k.raw_parameters.FORCE_EVAL.DFT.POISSON]
+# PERIODIC = "XZ"
+# POISSON_SOLVER = "WAVELET"

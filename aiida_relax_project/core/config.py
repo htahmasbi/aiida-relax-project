@@ -73,6 +73,8 @@ class Cp2kConfig(BaseModel):
     potential_file: str = "GTH_POTENTIALS"
     basis_set_mapping: dict[str, str] = Field(default_factory=dict)
     potential_mapping: dict[str, str] = Field(default_factory=dict)
+    ri_basis_set_mapping: dict[str, str] = Field(default_factory=dict)
+    ri_basis_set_file: Optional[str] = Field(default=None)
     raw_parameters: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("kpoints_mesh")

@@ -111,8 +111,13 @@ class SinglePointBuilder(BaseWorkflowBuilder):
             if self.config.cp2k.potential_mapping:
                 params_dict.setdefault("potential_mapping", {})
                 params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+            if self.config.cp2k.ri_basis_set_mapping:
+                params_dict.setdefault("ri_basis_set_mapping", {})
+                params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
             params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
             params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+            if self.config.cp2k.ri_basis_set_file:
+                params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
             if self.config.cp2k.raw_parameters:
                 params_dict.setdefault("raw_parameters", {})
                 params_dict["raw_parameters"] = _deep_merge(
@@ -176,8 +181,13 @@ class RelaxationBuilder(BaseWorkflowBuilder):
                 if self.config.cp2k.potential_mapping:
                     params_dict.setdefault("potential_mapping", {})
                     params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+                if self.config.cp2k.ri_basis_set_mapping:
+                    params_dict.setdefault("ri_basis_set_mapping", {})
+                    params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
                 params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
                 params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+                if self.config.cp2k.ri_basis_set_file:
+                    params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
                 if self.config.cp2k.raw_parameters:
                     params_dict.setdefault("raw_parameters", {})
                     params_dict["raw_parameters"] = _deep_merge(
@@ -277,8 +287,13 @@ class VolumeScanBuilder(BaseWorkflowBuilder):
             if self.config.cp2k.potential_mapping:
                 params_dict.setdefault("potential_mapping", {})
                 params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
+            if self.config.cp2k.ri_basis_set_mapping:
+                params_dict.setdefault("ri_basis_set_mapping", {})
+                params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
             params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
             params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
+            if self.config.cp2k.ri_basis_set_file:
+                params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
             if self.config.cp2k.raw_parameters:
                 params_dict.setdefault("raw_parameters", {})
                 params_dict["raw_parameters"] = _deep_merge(
