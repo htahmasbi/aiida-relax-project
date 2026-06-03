@@ -136,10 +136,16 @@ class TestGwConfig:
 
     def test_defaults(self):
         cfg = GwConfig()
-        assert cfg.kpoints_mesh == [24, 1, 24]
+        assert cfg.kpoints_mesh == [12, 1, 12]
+        assert cfg.kpoints_w == [12, 1, 12]
         assert cfg.cutoff == 400
         assert cfg.periodic == "XZ"
         assert cfg.poisson_solver == "WAVELET"
+        assert cfg.memory_per_proc == 600
+        assert "B" in cfg.element_settings
+        assert "N" in cfg.element_settings
+        assert cfg.element_settings["B"].ri_basis.startswith("RI_")
+        assert cfg.element_settings["N"].potential == "GTH-PBE-q5"
 
     def test_show_config_roundtrip(self, tmp_path):
         import tomli_w
@@ -149,6 +155,10 @@ class TestGwConfig:
                 "basis_set_file": "/custom/path/BASIS",
                 "ri_basis_set_file": "/custom/path/RI_BASIS",
                 "potential_file": "/custom/path/POTENTIAL",
+                "element_settings": {
+                    "C": {"ri_basis": "RI_C_basis", "potential": "GTH-PBE-q4"},
+                    "N": {"ri_basis": "RI_N_basis", "potential": "GTH-PBE-q5"},
+                },
             },
         }
         config_file = tmp_path / "config.toml"
@@ -161,6 +171,13 @@ class TestGwConfig:
         assert config.gw.ri_basis_set_file == "/custom/path/RI_BASIS"
         assert config.gw.potential_file == "/custom/path/POTENTIAL"
         assert config.gw.cutoff == 400  # default from field
+        # element_settings should merge with TOML values (overriding defaults)
+        assert "C" in config.gw.element_settings
+        assert config.gw.element_settings["C"].ri_basis == "RI_C_basis"
+        assert config.gw.element_settings["C"].potential == "GTH-PBE-q4"
+        # N should also be updated (custom toml should fully replace the dict)
+        assert config.gw.element_settings["N"].ri_basis == "RI_N_basis"
+        assert "B" not in config.gw.element_settings  # replaced by custom
 
 
 class TestMetadataOptions:

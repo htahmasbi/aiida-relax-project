@@ -114,6 +114,13 @@ class GenericParamsConfig(BaseModel):
     scf_guess: str = "ATOMIC"
 
 
+class ElementGwConfig(BaseModel):
+    """Per-element GW settings (RI basis and potential)."""
+
+    ri_basis: str
+    potential: str
+
+
 class GwConfig(BaseModel):
     """GW-specific configuration for CP2K bandstructure calculations."""
 
@@ -145,14 +152,16 @@ class GwConfig(BaseModel):
     cutoff_radius_ri: int = Field(default=5, ge=1)
     regularization_ri: float = Field(default=0.01, gt=0)
     orb_basis: str = Field(default="aug-SZV-MOLOPT-GTH-tier-1")
-    ri_basis_B: str = Field(
-        default="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
-    )
-    ri_basis_N: str = Field(
-        default="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
-    )
-    potential_B: str = Field(default="GTH-PBE-q3")
-    potential_N: str = Field(default="GTH-PBE-q5")
+    element_settings: dict[str, ElementGwConfig] = Field(default_factory=lambda: {
+        "B": ElementGwConfig(
+            ri_basis="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06",
+            potential="GTH-PBE-q3",
+        ),
+        "N": ElementGwConfig(
+            ri_basis="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06",
+            potential="GTH-PBE-q5",
+        ),
+    })
     bs_npoints: int = Field(default=20, ge=1)
     special_points: list[str] = Field(default_factory=lambda: [
         "GAMMA  0.0  0.0  0.0",

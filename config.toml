@@ -142,10 +142,14 @@ regularization_ri = 0.01
 
 # Basis sets and potentials per element
 orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
-ri_basis_B = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
-ri_basis_N = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
-potential_B = "GTH-PBE-q3"
-potential_N = "GTH-PBE-q5"
+
+[gw.element_settings.B]
+ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
+potential = "GTH-PBE-q3"
+
+[gw.element_settings.N]
+ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
+potential = "GTH-PBE-q5"
 
 # Bandstructure path (hexagonal BN: GAMMA-M-K-GAMMA)
 bs_npoints = 20

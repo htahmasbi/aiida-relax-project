@@ -42,9 +42,29 @@ def modifier(structure):
     return structure
 
 
-def make_gw_parameters(gw, scf_guess="ATOMIC"):
-    """Build the full CP2K input dict for a GW + bandstructure run."""
+def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
+    """Build the full CP2K input dict for a GW + bandstructure run.
+
+    KIND sections are generated dynamically from the unique elements
+    present in *structure* (a pymatgen Structure).
+    """
     mesh_str = " ".join(str(k) for k in gw.kpoints_mesh)
+
+    elements = sorted({site.species_string for site in structure})
+    kinds = []
+    for el in elements:
+        cfg = gw.element_settings.get(el)
+        if cfg is None:
+            raise ValueError(
+                f"No GW element_settings configured for {el}. "
+                f"Add an entry to [gw.element_settings.{el}] in config.toml."
+            )
+        kinds.append({
+            "_": el,
+            "BASIS_SET ORB": gw.orb_basis,
+            "BASIS_SET RI_AUX": cfg.ri_basis,
+            "POTENTIAL": cfg.potential,
+        })
 
     return Dict({
         "GLOBAL": {
@@ -112,20 +132,7 @@ def make_gw_parameters(gw, scf_guess="ATOMIC"):
                 "CELL": {
                     "PERIODIC": gw.periodic,
                 },
-                "KIND": [
-                    {
-                        "_": "B",
-                        "BASIS_SET ORB": gw.orb_basis,
-                        "BASIS_SET RI_AUX": gw.ri_basis_B,
-                        "POTENTIAL": gw.potential_B,
-                    },
-                    {
-                        "_": "N",
-                        "BASIS_SET ORB": gw.orb_basis,
-                        "BASIS_SET RI_AUX": gw.ri_basis_N,
-                        "POTENTIAL": gw.potential_N,
-                    },
-                ],
+                "KIND": kinds,
             },
         },
     })
@@ -185,10 +192,11 @@ def main():
     )
 
     gw = config.gw
-    parameters = make_gw_parameters(gw, scf_guess=args.scf_guess)
 
     for item in data:
         pymatgen_structure = item["structure"]
+
+        parameters = make_gw_parameters(gw, pymatgen_structure, scf_guess=args.scf_guess)
 
         structure = StructureData(pymatgen=pymatgen_structure)
         structure.label = f"MC2D GW {item['formula']} {item['id']} xz 3x3"
