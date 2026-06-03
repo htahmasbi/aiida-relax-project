@@ -20,8 +20,8 @@ StructureData = DataFactory("core.structure")
 
 def modifier(structure: Structure) -> Structure:
     """Modify each MC2D pymatgen Structure before CP2K."""
-    structure = rotate_xy_to_xz(structure, vacuum=20.0)
     structure = make_supercell_3x3(structure)
+    structure = rotate_xy_to_xz(structure, vacuum=20.0)
     return structure
 
 

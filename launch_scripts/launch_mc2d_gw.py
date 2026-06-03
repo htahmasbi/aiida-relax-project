@@ -34,9 +34,9 @@ StructureData = DataFactory("core.structure")
 
 
 def modifier(structure):
-    """Rotate 2D structure to xz-plane and build a 3×3 supercell."""
-    structure = rotate_xy_to_xz(structure, vacuum=20.0)
+    """Build a 3×3 supercell then rotate 2D structure to xz-plane."""
     structure = make_supercell_3x3(structure)
+    structure = rotate_xy_to_xz(structure, vacuum=20.0)
     return structure
 
 
