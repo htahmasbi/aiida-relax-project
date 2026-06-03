@@ -87,10 +87,6 @@ def make_gw_parameters(gw, scf_guess="ATOMIC"):
                     "SCHEME": f"MONKHORST-PACK {mesh_str}",
                     "PARALLEL_GROUP_SIZE": -1,
                 },
-                "POISSON": {
-                    "PERIODIC": gw.periodic,
-                    "POISSON_SOLVER": gw.poisson_solver,
-                },
             },
             "PROPERTIES": {
                 "BANDSTRUCTURE": {
