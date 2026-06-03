@@ -79,11 +79,6 @@ def make_gw_parameters(gw, scf_guess="ATOMIC"):
                         "BETA": gw.mixing_beta,
                         "NBROYDEN": gw.mixing_nbroyden,
                     },
-                    "PRINT": {
-                        "RESTART": {
-                            "_": "ON",
-                        },
-                    },
                 },
                 "XC": {
                     "XC_FUNCTIONAL": {"_": "PBE"},
