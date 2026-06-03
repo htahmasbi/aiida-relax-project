@@ -234,6 +234,7 @@ class Cp2kAdapter(BaseEngineAdapter):
                 "METHOD": "Quickstep",
                 "DFT": {
                     "BASIS_SET_FILE_NAME": generic_params.get("basis_set_file", "BASIS_MOLOPT"),
+                    "BASIS_SET_FILE_NAME": generic_params.get("basis_set_file", "BASIS_RI_MOLOPT"),
                     "POTENTIAL_FILE_NAME": generic_params.get("potential_file", "GTH_POTENTIALS"),
                     "CHARGE": charge,
                     "MULTIPLICITY": multiplicity,
