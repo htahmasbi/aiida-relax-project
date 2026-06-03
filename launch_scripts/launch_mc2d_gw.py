@@ -101,7 +101,7 @@ def make_gw_parameters(gw, scf_guess="ATOMIC"):
                         "EPS_FILTER": gw.eps_filter,
                         "CUTOFF_RADIUS_RI": gw.cutoff_radius_ri,
                         "REGULARIZATION_RI": gw.regularization_ri,
-                        "KPOINTS_W": list(gw.kpoints_w),
+                        "KPOINTS_W": " ".join(str(k) for k in gw.kpoints_w),
                     },
                     "BANDSTRUCTURE_PATH": {
                         "NPOINTS": gw.bs_npoints,
