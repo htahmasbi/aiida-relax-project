@@ -103,6 +103,60 @@ default_energy_tolerance = 1.0e-5
 default_force_tolerance = 0.01
 
 # =============================================================================
+# GW / Bandstructure Settings (CP2K only)
+# =============================================================================
+
+[gw]
+# Paths on the cluster for augmented basis sets and potentials
+basis_set_file = "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
+ri_basis_set_file = "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI"
+potential_file = "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
+
+# K-point meshes
+kpoints_mesh = [24, 1, 24]
+kpoints_w = [24, 1, 24]
+
+# Cutoffs and tolerances
+cutoff = 400
+rel_cutoff = 50
+eps_default = 1.0e-12
+eps_pgf_orb = 1.0e-12
+eps_scf = 5.0e-7
+max_scf = 500
+
+# Periodicity for 2D materials (XZ = periodic in x,z, vacuum in y)
+periodic = "XZ"
+poisson_solver = "WAVELET"
+
+# SCF mixing
+mixing_alpha = 0.2
+mixing_beta = 0.8
+mixing_nbroyden = 10
+
+# GW parameters
+num_time_freq = 10
+memory_per_proc = 300
+eps_filter = 1.0e-6
+cutoff_radius_ri = 5
+regularization_ri = 0.01
+
+# Basis sets and potentials per element
+orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
+ri_basis_B = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
+ri_basis_N = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
+potential_B = "GTH-PBE-q3"
+potential_N = "GTH-PBE-q5"
+
+# Bandstructure path (hexagonal BN: GAMMA-M-K-GAMMA)
+bs_npoints = 20
+special_points = [
+    "GAMMA  0.0  0.0  0.0",
+    "M      0.5  0.0  0.0",
+    "K      0.3333  0.0  0.3333",
+    "GAMMA  0.0  0.0  0.0",
+]
+
+# =============================================================================
 # Volume Scan Settings
 # =============================================================================
 

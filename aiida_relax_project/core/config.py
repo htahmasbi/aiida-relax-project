@@ -114,6 +114,54 @@ class GenericParamsConfig(BaseModel):
     scf_guess: str = "ATOMIC"
 
 
+class GwConfig(BaseModel):
+    """GW-specific configuration for CP2K bandstructure calculations."""
+
+    basis_set_file: str = Field(
+        default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
+    )
+    ri_basis_set_file: str = Field(
+        default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI"
+    )
+    potential_file: str = Field(
+        default="/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
+    )
+    kpoints_mesh: list[int] = Field(default_factory=lambda: [24, 1, 24])
+    kpoints_w: list[int] = Field(default_factory=lambda: [24, 1, 24])
+    periodic: str = Field(default="XZ")
+    poisson_solver: str = Field(default="WAVELET")
+    cutoff: int = Field(default=400, ge=0)
+    rel_cutoff: int = Field(default=50, ge=0)
+    eps_default: float = Field(default=1.0e-12, gt=0)
+    eps_pgf_orb: float = Field(default=1.0e-12, gt=0)
+    eps_scf: float = Field(default=5.0e-7, gt=0)
+    max_scf: int = Field(default=500, ge=1)
+    mixing_alpha: float = Field(default=0.2)
+    mixing_beta: float = Field(default=0.8)
+    mixing_nbroyden: int = Field(default=10)
+    num_time_freq: int = Field(default=10, ge=1)
+    memory_per_proc: int = Field(default=300, ge=1)
+    eps_filter: float = Field(default=1.0e-6, gt=0)
+    cutoff_radius_ri: int = Field(default=5, ge=1)
+    regularization_ri: float = Field(default=0.01, gt=0)
+    orb_basis: str = Field(default="aug-SZV-MOLOPT-GTH-tier-1")
+    ri_basis_B: str = Field(
+        default="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06"
+    )
+    ri_basis_N: str = Field(
+        default="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_s_p_d_f_g_h_i_6_3_2_0_0_0_0_error_2.9e-06"
+    )
+    potential_B: str = Field(default="GTH-PBE-q3")
+    potential_N: str = Field(default="GTH-PBE-q5")
+    bs_npoints: int = Field(default=20, ge=1)
+    special_points: list[str] = Field(default_factory=lambda: [
+        "GAMMA  0.0  0.0  0.0",
+        "M      0.5  0.0  0.0",
+        "K      0.3333  0.0  0.3333",
+        "GAMMA  0.0  0.0  0.0",
+    ])
+
+
 class ProjectConfig(BaseSettings):
     """Main configuration class for aiida-relax-project.
 
@@ -136,6 +184,7 @@ class ProjectConfig(BaseSettings):
 
     vasp: VaspConfig = Field(default_factory=VaspConfig)
     cp2k: Cp2kConfig = Field(default_factory=Cp2kConfig)
+    gw: GwConfig = Field(default_factory=GwConfig)
     relax: RelaxConfig = Field(default_factory=RelaxConfig)
     volume_scan: VolumeScanConfig = Field(default_factory=VolumeScanConfig)
     generic: GenericParamsConfig = Field(default_factory=GenericParamsConfig)
@@ -191,6 +240,7 @@ class ProjectConfig(BaseSettings):
             "metadata_options": self.metadata_options.to_dict(),
             "vasp": self.vasp.model_dump(),
             "cp2k": self.cp2k.model_dump(),
+            "gw": self.gw.model_dump(),
             "relax": self.relax.model_dump(),
             "volume_scan": self.volume_scan.model_dump(),
         }

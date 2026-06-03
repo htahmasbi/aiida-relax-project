@@ -18,6 +18,7 @@ from aiida_relax_project.core.config import (
     Cp2kConfig,
     RelaxConfig,
     VolumeScanConfig,
+    GwConfig,
     MetadataOptions,
     load_config,
     _merge_configs,
@@ -128,6 +129,38 @@ class TestCp2kConfig:
     def test_ri_basis_set_file(self):
         cfg = Cp2kConfig(ri_basis_set_file="/path/to/RI_BASIS")
         assert cfg.ri_basis_set_file == "/path/to/RI_BASIS"
+
+
+class TestGwConfig:
+    """Test GW-specific configuration."""
+
+    def test_defaults(self):
+        cfg = GwConfig()
+        assert cfg.kpoints_mesh == [24, 1, 24]
+        assert cfg.cutoff == 400
+        assert cfg.periodic == "XZ"
+        assert cfg.poisson_solver == "WAVELET"
+
+    def test_show_config_roundtrip(self, tmp_path):
+        import tomli_w
+        config_data = {
+            "engine": "cp2k",
+            "gw": {
+                "basis_set_file": "/custom/path/BASIS",
+                "ri_basis_set_file": "/custom/path/RI_BASIS",
+                "potential_file": "/custom/path/POTENTIAL",
+            },
+        }
+        config_file = tmp_path / "config.toml"
+        with open(config_file, "wb") as f:
+            tomli_w.dump(config_data, f)
+
+        from aiida_relax_project.core.config import load_config
+        config = load_config(config_file)
+        assert config.gw.basis_set_file == "/custom/path/BASIS"
+        assert config.gw.ri_basis_set_file == "/custom/path/RI_BASIS"
+        assert config.gw.potential_file == "/custom/path/POTENTIAL"
+        assert config.gw.cutoff == 400  # default from field
 
 
 class TestMetadataOptions:
