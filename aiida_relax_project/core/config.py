@@ -322,7 +322,10 @@ def load_config(config_path: str | Path | None = None) -> ProjectConfig:
     Returns:
         Validated ProjectConfig instance
     """
-    import tomllib
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore[no-redef]
 
     config_data: dict[str, Any] = {}
 
