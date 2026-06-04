@@ -1,6 +1,27 @@
 from __future__ import annotations
 
+import numpy as np
 from pymatgen.core import Lattice, Structure
+
+
+def center_slab_in_cell(structure: Structure) -> Structure:
+    """Center the 2D slab in the cell along the vacuum direction (c-axis).
+
+    Uses circular statistics to handle atoms that straddle the periodic
+    boundary (fractional z near 0 or 1).
+    """
+    structure = structure.copy()
+    z_frac = np.array(structure.frac_coords)[:, 2]
+    mean_angle = np.arctan2(
+        np.mean(np.sin(2 * np.pi * z_frac)),
+        np.mean(np.cos(2 * np.pi * z_frac)),
+    )
+    mean_z = mean_angle / (2 * np.pi)
+    shift_z = 0.5 - mean_z
+    structure.translate_sites(
+        list(range(len(structure))), [0, 0, shift_z],
+    )
+    return structure
 
 
 def rotate_xy_to_xz(structure: Structure, vacuum: float = 20.0) -> Structure:

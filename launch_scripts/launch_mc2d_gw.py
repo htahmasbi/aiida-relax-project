@@ -25,9 +25,11 @@ from aiida_relax_project.core.config import get_config
 def modifier(structure):
     """Build a 3×3 supercell then rotate 2D structure to xz-plane."""
     from aiida_relax_project.transformations.structures import (
+        center_slab_in_cell,
         make_supercell_3x3,
         rotate_xy_to_xz,
     )
+    structure = center_slab_in_cell(structure)
     structure = make_supercell_3x3(structure)
     structure = rotate_xy_to_xz(structure, vacuum=20.0)
     return structure
