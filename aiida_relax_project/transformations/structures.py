@@ -33,7 +33,8 @@ def rotate_xy_to_xz(structure: Structure, vacuum: float = 20.0) -> Structure:
         y_new = z_old
         z_new = y_old
 
-    The new vacuum direction is y.
+    The new vacuum direction is y.  Atoms are automatically centered
+    in the new vacuum gap.
     """
     old_lattice = structure.lattice.matrix
 
@@ -54,12 +55,25 @@ def rotate_xy_to_xz(structure: Structure, vacuum: float = 20.0) -> Structure:
         species.append(site.species)
         coords.append([x, z, y])
 
-    return Structure(
+    result = Structure(
         lattice=new_lattice,
         species=species,
         coords=coords,
         coords_are_cartesian=True,
     )
+
+    # Center slab in the new vacuum along y
+    y_frac = np.array(result.frac_coords)[:, 1]
+    mean_angle = np.arctan2(
+        np.mean(np.sin(2 * np.pi * y_frac)),
+        np.mean(np.cos(2 * np.pi * y_frac)),
+    )
+    mean_y = mean_angle / (2 * np.pi)
+    shift_y = 0.5 - mean_y
+    result.translate_sites(
+        list(range(len(result))), [0, shift_y, 0],
+    )
+    return result
 
 
 def make_supercell_3x3(structure: Structure) -> Structure:
