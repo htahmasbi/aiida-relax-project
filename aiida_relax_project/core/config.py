@@ -136,6 +136,11 @@ class GwConfig(BaseModel):
     """
 
     auto_resolve: bool = False
+    ri_basis_accuracy_target: float | None = Field(
+        default=None,
+        description="Target relative accuracy for RI basis selection "
+                    "(e.g. 1e-5). Picks the best basis not exceeding this value.",
+    )
     basis_set_file: str = Field(
         default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
     )
@@ -199,7 +204,11 @@ class GwConfig(BaseModel):
                         f"{el}: no potential found in {self.potential_file}"
                     )
                     continue
-                ri_basis = resolve_ri_basis_name(self.ri_basis_set_file, el)
+                ri_basis = resolve_ri_basis_name(
+                    self.ri_basis_set_file, el,
+                    accuracy_target=self.ri_basis_accuracy_target,
+                    orb_basis=self.orb_basis,
+                )
                 if ri_basis is None:
                     errors.append(
                         f"{el}: no RI basis found in {self.ri_basis_set_file}"
