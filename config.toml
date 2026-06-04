@@ -114,7 +114,7 @@ potential_file = "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
 
 # Target relative accuracy for RI basis selection (e.g. 1e-5, 1e-6).
 # When set, auto_resolve picks the best RI basis not exceeding this value.
-# ri_basis_accuracy_target = 1e-5
+ri_basis_accuracy_target = 1e-5
 
 # K-point meshes
 kpoints_mesh = [12, 1, 12]
@@ -164,7 +164,7 @@ orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
 
 # Alternatively, set auto_resolve = true to read element→name mappings
 # directly from the three file paths (files must be locally accessible):
-# auto_resolve = true
+auto_resolve = true
 
 # Bandstructure path (hexagonal BN: GAMMA-M-K-GAMMA)
 bs_npoints = 20
