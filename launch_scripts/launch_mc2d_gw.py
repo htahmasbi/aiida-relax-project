@@ -22,17 +22,19 @@ import argparse
 from aiida_relax_project.core.config import get_config
 
 
-def modifier(structure):
-    """Build a 3×3 supercell then rotate 2D structure to xz-plane."""
+def make_modifier(vacuum: float = 20.0):
+    """Return a modifier that builds a 3×3 supercell then rotates to xz-plane."""
     from aiida_relax_project.transformations.structures import (
         center_slab_in_cell,
         make_supercell_3x3,
         rotate_xy_to_xz,
     )
-    structure = center_slab_in_cell(structure)
-    structure = make_supercell_3x3(structure)
-    structure = rotate_xy_to_xz(structure, vacuum=20.0)
-    return structure
+    def modifier(structure):
+        structure = center_slab_in_cell(structure)
+        structure = make_supercell_3x3(structure)
+        structure = rotate_xy_to_xz(structure, vacuum=vacuum)
+        return structure
+    return modifier
 
 
 def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
@@ -201,6 +203,7 @@ def main():
     args = parse_args()
 
     config = get_config()
+    gw = config.gw
 
     if args.show_config:
         print("GW configuration:")
@@ -240,6 +243,7 @@ def main():
     fetch_limit = (
         args.max_structures * 10 if args.elements else args.max_structures
     )
+    modifier = make_modifier(gw.vacuum)
     data = fetch_mc2d_structures(
         optimade_filter=optimade_filter,
         max_structures=fetch_limit,
@@ -260,8 +264,6 @@ def main():
             print(f"  Skipped {skipped} structure(s) with elements outside {{{', '.join(sorted(allowed))}}}")
         # Trim back to the user-requested count
         data = data[:args.max_structures]
-
-    gw = config.gw
 
     for item in data:
         pymatgen_structure = item["structure"]

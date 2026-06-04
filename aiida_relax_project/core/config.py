@@ -169,6 +169,8 @@ class GwConfig(BaseModel):
     cutoff_radius_ri: int = Field(default=5, ge=1)
     regularization_ri: float = Field(default=0.01, gt=0)
     orb_basis: str = Field(default="aug-SZV-MOLOPT-GTH-tier-1")
+    vacuum: float = Field(default=20.0, ge=5.0,
+                          description="Vacuum gap (A) along y after rotation.")
     element_settings: dict[str, ElementGwConfig] = Field(default_factory=lambda: {
         "B": ElementGwConfig(
             ri_basis="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06",

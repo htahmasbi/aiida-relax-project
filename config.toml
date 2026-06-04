@@ -132,6 +132,9 @@ max_scf = 500
 periodic = "XZ"
 poisson_solver = "WAVELET"
 
+# Vacuum gap (A) along the non-periodic direction after rotation
+vacuum = 20.0
+
 # SCF mixing
 mixing_alpha = 0.2
 mixing_beta = 0.8
