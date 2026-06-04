@@ -14,6 +14,7 @@ from aiida.plugins import WorkflowFactory
 
 from aiida_relax_project.core.engine import EngineFactory
 from aiida_relax_project.core.enums import RelaxType
+from aiida_relax_project.core.exceptions import StructureValidationError
 from aiida_relax_project.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -183,7 +184,7 @@ class DynamicRelaxWorkChain(WorkChain):
         adapter = EngineFactory.create(self.ctx.engine)
         try:
             adapter.validate_structure(self.inputs.structure)
-        except Exception as e:
+        except StructureValidationError as e:
             logger.error("Structure validation failed: %s", e)
             self.abort_nowait(str(e))
 

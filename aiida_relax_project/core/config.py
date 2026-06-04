@@ -211,8 +211,10 @@ class GwConfig(BaseModel):
                 errors.append(f"Cannot read {exc.filename} — file not found locally")
             except PermissionError as exc:
                 errors.append(f"Cannot read {exc.filename} — permission denied")
-            except Exception as exc:
-                errors.append(f"{el}: {exc}")
+            except OSError as exc:
+                errors.append(f"File error reading {getattr(exc, 'filename', 'unknown')}: {exc}")
+            except ValueError as exc:
+                errors.append(f"Parse error for {el}: {exc}")
 
         if errors:
             raise RuntimeError(

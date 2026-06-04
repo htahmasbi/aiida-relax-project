@@ -99,8 +99,8 @@ def run(
 
     try:
         code = orm.load_code(f"{engine}@{code_label}")
-    except Exception:
-        console.print(f"[red]Error:[/red] Code '{engine}@{code_label}' not found.")
+    except Exception as exc:
+        console.print(f"[red]Error:[/red] Code '{engine}@{code_label}' not found: {exc}")
         console.print("Run 'verdi code list' to see available codes.")
         raise typer.Exit(1)
 
@@ -272,9 +272,9 @@ def validate(
         try:
             StructureData = DataFactory("core.structure")
             structure = StructureData.get_or_create(structure_file)[0]
-        except Exception as e:
+        except (OSError, ValueError) as e:
             console.print(f"[red]Error:[/red] Failed to load structure: {e}")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
     else:
         structure = create_example_structure("Si")
         console.print("[yellow]No structure file provided, using example Si structure[/yellow]")
@@ -290,9 +290,9 @@ def validate(
         console.print(f"Elements: {', '.join(unique_elements)}")
         console.print(f"Number of atoms: {len(structure.sites)}")
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         console.print(f"[red]Validation failed:[/red] {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def _parse_params(param_string: Optional[str]) -> dict:

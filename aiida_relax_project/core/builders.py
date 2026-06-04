@@ -34,6 +34,38 @@ class BaseWorkflowBuilder(ABC):
             self._config = get_config()
         return self._config
 
+    def _apply_cp2k_config(self, params_dict: dict) -> dict:
+        """Apply CP2K config defaults (basis/potential/RI mappings) to a parameters dict."""
+        result = params_dict.copy()
+        if self.config.cp2k.basis_set_mapping:
+            result.setdefault("basis_set_mapping", {})
+            result["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
+        if self.config.cp2k.potential_mapping:
+            result.setdefault("potential_mapping", {})
+            result["potential_mapping"].update(self.config.cp2k.potential_mapping)
+        if self.config.cp2k.ri_basis_set_mapping:
+            result.setdefault("ri_basis_set_mapping", {})
+            result["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
+        result.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
+        result.setdefault("potential_file", self.config.cp2k.potential_file)
+        if self.config.cp2k.ri_basis_set_file:
+            result.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
+        if self.config.cp2k.raw_parameters:
+            result.setdefault("raw_parameters", {})
+            result["raw_parameters"] = _deep_merge(
+                result["raw_parameters"], self.config.cp2k.raw_parameters
+            )
+        return result
+
+    def _merge_vasp_incar(self, params_dict: dict) -> dict:
+        """Merge VASP raw_incar overrides into a parameters dict."""
+        if not self.config.vasp.raw_incar:
+            return params_dict
+        result = params_dict.copy()
+        result.setdefault("raw_incar", {})
+        result["raw_incar"].update(self.config.vasp.raw_incar)
+        return result
+
     @abstractmethod
     def build_inputs(
         self,
@@ -97,33 +129,15 @@ class SinglePointBuilder(BaseWorkflowBuilder):
         if engine == "vasp":
             inputs["potential_family"] = orm.Str(self.config.vasp.potential_family)
             inputs["potential_mapping"] = orm.Dict(dict=self.config.vasp.potential_mapping)
-            if use_generic_params and self.config.vasp.raw_incar:
-                params_dict = inputs["parameters"].get_dict()
-                params_dict.setdefault("raw_incar", {})
-                params_dict["raw_incar"].update(self.config.vasp.raw_incar)
-                inputs["parameters"] = orm.Dict(dict=params_dict)
+            if use_generic_params:
+                inputs["parameters"] = orm.Dict(
+                    dict=self._merge_vasp_incar(inputs["parameters"].get_dict())
+                )
 
         if engine == "cp2k" and use_generic_params:
-            params_dict = inputs["parameters"].get_dict()
-            if self.config.cp2k.basis_set_mapping:
-                params_dict.setdefault("basis_set_mapping", {})
-                params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
-            if self.config.cp2k.potential_mapping:
-                params_dict.setdefault("potential_mapping", {})
-                params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
-            if self.config.cp2k.ri_basis_set_mapping:
-                params_dict.setdefault("ri_basis_set_mapping", {})
-                params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
-            params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
-            params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
-            if self.config.cp2k.ri_basis_set_file:
-                params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
-            if self.config.cp2k.raw_parameters:
-                params_dict.setdefault("raw_parameters", {})
-                params_dict["raw_parameters"] = _deep_merge(
-                    params_dict["raw_parameters"], self.config.cp2k.raw_parameters
-                )
-            inputs["parameters"] = orm.Dict(dict=params_dict)
+            inputs["parameters"] = orm.Dict(
+                dict=self._apply_cp2k_config(inputs["parameters"].get_dict())
+            )
 
         inputs.update(extra_inputs)
         return inputs
@@ -171,28 +185,10 @@ class RelaxationBuilder(BaseWorkflowBuilder):
         if use_generic_params:
             params_dict = parameters.get_dict()
             params_dict["run_type"] = "relax"
-            if engine == "vasp" and self.config.vasp.raw_incar:
-                params_dict.setdefault("raw_incar", {})
-                params_dict["raw_incar"].update(self.config.vasp.raw_incar)
-            if engine == "cp2k":
-                if self.config.cp2k.basis_set_mapping:
-                    params_dict.setdefault("basis_set_mapping", {})
-                    params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
-                if self.config.cp2k.potential_mapping:
-                    params_dict.setdefault("potential_mapping", {})
-                    params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
-                if self.config.cp2k.ri_basis_set_mapping:
-                    params_dict.setdefault("ri_basis_set_mapping", {})
-                    params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
-                params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
-                params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
-                if self.config.cp2k.ri_basis_set_file:
-                    params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
-                if self.config.cp2k.raw_parameters:
-                    params_dict.setdefault("raw_parameters", {})
-                    params_dict["raw_parameters"] = _deep_merge(
-                        params_dict["raw_parameters"], self.config.cp2k.raw_parameters
-                    )
+            if engine == "vasp":
+                params_dict = self._merge_vasp_incar(params_dict)
+            elif engine == "cp2k":
+                params_dict = self._apply_cp2k_config(params_dict)
             parameters = adapter.build_parameters(params_dict, run_type="relax")
 
         kpoints = kpoints or adapter.build_kpoints(self.config.get_kpoints_mesh())
@@ -273,33 +269,15 @@ class VolumeScanBuilder(BaseWorkflowBuilder):
         if engine == "vasp":
             inputs["potential_family"] = orm.Str(self.config.vasp.potential_family)
             inputs["potential_mapping"] = orm.Dict(dict=self.config.vasp.potential_mapping)
-            if use_generic_params and self.config.vasp.raw_incar:
-                vasp_params = inputs["parameters"].get_dict()
-                vasp_params.setdefault("raw_incar", {})
-                vasp_params["raw_incar"].update(self.config.vasp.raw_incar)
-                inputs["parameters"] = orm.Dict(dict=vasp_params)
+            if use_generic_params:
+                inputs["parameters"] = orm.Dict(
+                    dict=self._merge_vasp_incar(inputs["parameters"].get_dict())
+                )
 
         if engine == "cp2k" and use_generic_params:
-            params_dict = inputs["parameters"].get_dict()
-            if self.config.cp2k.basis_set_mapping:
-                params_dict.setdefault("basis_set_mapping", {})
-                params_dict["basis_set_mapping"].update(self.config.cp2k.basis_set_mapping)
-            if self.config.cp2k.potential_mapping:
-                params_dict.setdefault("potential_mapping", {})
-                params_dict["potential_mapping"].update(self.config.cp2k.potential_mapping)
-            if self.config.cp2k.ri_basis_set_mapping:
-                params_dict.setdefault("ri_basis_set_mapping", {})
-                params_dict["ri_basis_set_mapping"].update(self.config.cp2k.ri_basis_set_mapping)
-            params_dict.setdefault("basis_set_file", self.config.cp2k.basis_set_file)
-            params_dict.setdefault("potential_file", self.config.cp2k.potential_file)
-            if self.config.cp2k.ri_basis_set_file:
-                params_dict.setdefault("ri_basis_set_file", self.config.cp2k.ri_basis_set_file)
-            if self.config.cp2k.raw_parameters:
-                params_dict.setdefault("raw_parameters", {})
-                params_dict["raw_parameters"] = _deep_merge(
-                    params_dict["raw_parameters"], self.config.cp2k.raw_parameters
-                )
-            inputs["parameters"] = orm.Dict(dict=params_dict)
+            inputs["parameters"] = orm.Dict(
+                dict=self._apply_cp2k_config(inputs["parameters"].get_dict())
+            )
 
         inputs.update(extra_inputs)
         return inputs
@@ -346,6 +324,7 @@ def fetch_structures_from_optimade(
         The group with added structures
     """
     from aiida import orm
+    from aiida.common import NotExistent
     from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
     from aiida_relax_project.transformations.structures import rotate_xy_to_xz, make_supercell_3x3
 
@@ -353,7 +332,7 @@ def fetch_structures_from_optimade(
         group = orm.Group.collection.get(label=group_label)
         logger.info(f"Found existing group '{group_label}' with {len(group.nodes)} nodes")
         return group
-    except Exception:
+    except NotExistent:
         logger.info(f"Creating new group '{group_label}'")
         group, _ = orm.Group.collection.get_or_create(group_label)
 
@@ -364,7 +343,11 @@ def fetch_structures_from_optimade(
         filter_str = 'nelements=2'
 
     if modifier is None:
-        modifier = lambda s: rotate_xy_to_xz(make_supercell_3x3(s), vacuum=20.0)
+        def default_modifier(s):
+            return rotate_xy_to_xz(make_supercell_3x3(s), vacuum=20.0)
+        modifier = default_modifier
+
+    import requests
 
     try:
         structures = fetch_mc2d_structures(
@@ -385,7 +368,9 @@ def fetch_structures_from_optimade(
 
         logger.info(f"Added {len(structures)} structures to group '{group_label}'")
 
-    except Exception as e:
-        logger.warning(f"Failed to fetch from OPTIMADE: {e}")
+    except requests.RequestException as e:
+        logger.warning(f"Network error fetching from OPTIMADE: {e}")
+    except (ValueError, KeyError) as e:
+        logger.warning(f"Failed to parse OPTIMADE response: {e}")
 
     return group
