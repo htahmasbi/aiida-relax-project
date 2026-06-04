@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from aiida import orm
 
 from aiida import orm
-from aiida.engine import WorkChain, ToContext
-
-from aiida_relax_project.core.engine import EngineFactory
+from aiida.engine import ToContext, WorkChain
 
 from aiida_relax_project.core.logging import get_logger
 from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
@@ -242,7 +239,7 @@ class DynamicVolumeScanWorkChain(WorkChain):
         self.out("engine_used", orm.Str(self.ctx.engine))
         logger.info("Collected results for %d structures", len(energies))
 
-    def _extract_energy(self, output_parameters: dict) -> Optional[float]:
+    def _extract_energy(self, output_parameters: dict) -> float | None:
         """Extract energy from output parameters (engine-agnostic)."""
         energy_keys = [
             ("energy", None),

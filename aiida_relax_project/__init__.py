@@ -41,17 +41,17 @@ __author__ = "Hossein Tahmasbi"
 
 from aiida_relax_project.core import (
     AiidaRelaxError,
-    EngineError,
+    CalculationMode,
     ConfigurationError,
+    EngineError,
+    EngineType,
+    RelaxType,
+    RunType,
     StructureValidationError,
     WorkflowExecutionError,
-    EngineType,
-    RunType,
-    RelaxType,
-    CalculationMode,
     get_config,
-    setup_logging,
     get_logger,
+    setup_logging,
 )
 
 __all__ = [

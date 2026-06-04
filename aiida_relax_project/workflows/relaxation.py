@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from aiida import orm
 
 from aiida import orm
-from aiida.engine import WorkChain, ToContext
+from aiida.engine import ToContext, WorkChain
 from aiida.plugins import WorkflowFactory
 
 from aiida_relax_project.core.engine import EngineFactory
-from aiida_relax_project.core.enums import RelaxType
 from aiida_relax_project.core.exceptions import StructureValidationError
 from aiida_relax_project.core.logging import get_logger
 

@@ -2,23 +2,18 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from aiida import orm
-    from aiida.orm import StructureData, Dict, KpointsData, AbstractCode, Str, Bool
 
 from aiida import orm
-from aiida.engine import WorkChain, ToContext
+from aiida.engine import ToContext, WorkChain
 from aiida.plugins import CalculationFactory
 
-from aiida_relax_project.core.engine import EngineFactory, BaseEngineAdapter
-from aiida_relax_project.core.enums import EngineType as EngineTypeLiteral
+from aiida_relax_project.core.engine import EngineFactory
 from aiida_relax_project.core.exceptions import (
-    EngineError,
     StructureValidationError,
-    WorkflowExecutionError,
 )
 from aiida_relax_project.core.logging import get_logger
 

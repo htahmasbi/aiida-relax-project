@@ -12,7 +12,6 @@ from aiida_relax_project.transformations.structures import (
     rotate_xy_to_xz,
 )
 
-
 StructureData = DataFactory("core.structure")
 
 

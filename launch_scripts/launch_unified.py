@@ -29,24 +29,25 @@ Environment variables:
 """
 
 import argparse
-from typing import Optional
 
 from aiida import load_profile, orm
 from aiida.engine import submit
 from aiida.plugins import DataFactory
 
 from aiida_relax_project.core.config import get_config
-from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
-from aiida_relax_project.workflows.relaxation import DynamicRelaxWorkChain
-from aiida_relax_project.workflows.volume_scan import DynamicVolumeScanWorkChain
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
-from aiida_relax_project.transformations.structures import rotate_xy_to_xz, make_supercell_3x3
-
+from aiida_relax_project.transformations.structures import (
+    make_supercell_3x3,
+    rotate_xy_to_xz,
+)
+from aiida_relax_project.workflows.relaxation import DynamicRelaxWorkChain
+from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
+from aiida_relax_project.workflows.volume_scan import DynamicVolumeScanWorkChain
 
 StructureData = DataFactory("core.structure")
 
 
-def parse_generic_params(param_string: Optional[str]) -> dict:
+def parse_generic_params(param_string: str | None) -> dict:
     """Parse generic parameters from comma-separated key=value pairs."""
     if not param_string:
         return {}
@@ -97,8 +98,8 @@ def launch_single_point(
     structure: StructureData,
     parameters: dict,
     use_generic: bool = False,
-    kpoints_mesh: Optional[list] = None,
-    metadata_options: Optional[dict] = None,
+    kpoints_mesh: list | None = None,
+    metadata_options: dict | None = None,
 ):
     """Launch a single-point calculation."""
     code = orm.load_code(f"{engine}@{code_label}")
@@ -139,8 +140,8 @@ def launch_relaxation(
     parameters: dict,
     relax_type: str = "volume",
     use_generic: bool = False,
-    kpoints_mesh: Optional[list] = None,
-    metadata_options: Optional[dict] = None,
+    kpoints_mesh: list | None = None,
+    metadata_options: dict | None = None,
 ):
     """Launch a relaxation calculation."""
     code = orm.load_code(f"{engine}@{code_label}")
@@ -181,10 +182,10 @@ def launch_volume_scan(
     group_label: str,
     parameters: dict,
     use_generic: bool = False,
-    kpoints_mesh: Optional[list] = None,
-    metadata_options: Optional[dict] = None,
+    kpoints_mesh: list | None = None,
+    metadata_options: dict | None = None,
     continue_on_failure: bool = False,
-    max_structures: Optional[int] = None,
+    max_structures: int | None = None,
 ):
     """Launch a volume scan for structures in a group."""
     code = orm.load_code(f"{engine}@{code_label}")

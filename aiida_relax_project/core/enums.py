@@ -5,7 +5,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-
 EngineType = Literal["vasp", "cp2k"]
 """Supported DFT calculation engines."""
 

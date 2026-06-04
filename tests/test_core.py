@@ -3,15 +3,15 @@
 import pytest
 
 from aiida_relax_project.core.enums import (
-    RelaxType,
+    RESOURCE_PRESETS,
     CalculationMode,
     ConvergenceStatus,
-    RESOURCE_PRESETS,
+    RelaxType,
 )
 from aiida_relax_project.core.exceptions import (
     AiidaRelaxError,
-    EngineError,
     ConfigurationError,
+    EngineError,
     StructureValidationError,
 )
 

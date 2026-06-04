@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 
 from aiida_relax_project.core.engine import (
+    Cp2kAdapter,
     EngineFactory,
     VaspAdapter,
-    Cp2kAdapter,
 )
 from aiida_relax_project.core.exceptions import EngineError
 
@@ -37,7 +37,7 @@ class TestEngineFactory:
     def test_case_insensitive(self):
         adapter1 = EngineFactory.create("VASP")
         adapter2 = EngineFactory.create("vasp")
-        assert type(adapter1) == type(adapter2)
+        assert type(adapter1) is type(adapter2)
 
 
 class TestVaspAdapter:

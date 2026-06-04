@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from aiida import load_profile, orm
 from aiida.engine import submit
-from aiida.plugins import CalculationFactory, DataFactory
 from aiida.orm import Dict, KpointsData
+from aiida.plugins import CalculationFactory, DataFactory
 from pymatgen.core import Structure
 
 from aiida_relax_project.core.config import get_config
 from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 from aiida_relax_project.transformations.structures import (
-    rotate_xy_to_xz,
     make_supercell_3x3,
+    rotate_xy_to_xz,
 )
-
 
 Cp2kCalculation = CalculationFactory("cp2k")
 StructureData = DataFactory("core.structure")

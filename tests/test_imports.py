@@ -8,8 +8,8 @@ pytestmark = pytest.mark.skip(reason="Requires aiida to be installed")
 class TestProjectImport:
     def test_import_workflows(self):
         from aiida_relax_project.workflows import (
-            DynamicSinglePointWorkChain,
             DynamicRelaxWorkChain,
+            DynamicSinglePointWorkChain,
             DynamicVolumeScanWorkChain,
         )
 

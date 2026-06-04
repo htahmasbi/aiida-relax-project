@@ -25,8 +25,8 @@ from aiida_relax_project.core.config import get_config
 def modifier(structure):
     """Build a 3×3 supercell then rotate 2D structure to xz-plane."""
     from aiida_relax_project.transformations.structures import (
-        rotate_xy_to_xz,
         make_supercell_3x3,
+        rotate_xy_to_xz,
     )
     structure = make_supercell_3x3(structure)
     structure = rotate_xy_to_xz(structure, vacuum=20.0)
@@ -54,7 +54,7 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
             resolved = gw.resolve_elements(set(missing))
             settings.update(resolved)
             descs = [
-                "%s(ri=%s..., pot=%s)" % (el, cfg.ri_basis[:15], cfg.potential)
+                f"{el}(ri={cfg.ri_basis[:15]}..., pot={cfg.potential})"
                 for el, cfg in sorted(resolved.items())
             ]
             print("  Auto-resolved for: " + ", ".join(descs))
@@ -202,8 +202,9 @@ def main():
 
     from aiida import load_profile, orm
     from aiida.engine import submit
-    from aiida.plugins import CalculationFactory, DataFactory
     from aiida.orm import Dict
+    from aiida.plugins import CalculationFactory, DataFactory
+
     from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
 
     Cp2kCalculation = CalculationFactory("cp2k")

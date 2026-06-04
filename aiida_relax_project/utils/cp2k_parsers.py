@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import TextIO
 
 
 def parse_cp2k_data_file(path: str) -> dict[str, list[tuple[str, str]]]:

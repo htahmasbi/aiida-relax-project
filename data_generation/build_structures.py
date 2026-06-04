@@ -1,5 +1,5 @@
+from aiida import load_profile, orm
 from ase.build import bulk
-from aiida import orm, load_profile
 
 
 def create_silicon_set(group_label: str = "si_test_set") -> None:

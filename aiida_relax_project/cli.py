@@ -2,25 +2,23 @@
 
 from __future__ import annotations
 
-import sys
-from typing import Optional, Annotated
+from typing import Annotated
 
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
-from aiida_relax_project.core.config import get_config, load_config, reset_config
-from aiida_relax_project.core.enums import CalculationMode, RelaxType, RESOURCE_PRESETS
-from aiida_relax_project.core.engine import EngineFactory
-from aiida_relax_project.core.logging import setup_logging, get_logger
 from aiida_relax_project.core.builders import (
-    SinglePointBuilder,
     RelaxationBuilder,
+    SinglePointBuilder,
     VolumeScanBuilder,
     create_example_structure,
     fetch_structures_from_optimade,
 )
+from aiida_relax_project.core.config import get_config
+from aiida_relax_project.core.engine import EngineFactory
+from aiida_relax_project.core.enums import CalculationMode, RelaxType
+from aiida_relax_project.core.logging import get_logger, setup_logging
 
 app = typer.Typer(
     name="aiida-relax",
@@ -39,34 +37,34 @@ def run(
         typer.Option("--mode", "-m", help="Calculation mode")
     ] = CalculationMode.SINGLE_POINT,
     engine: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--engine", "-e", help="Calculation engine (vasp or cp2k)")
     ] = None,
     code_label: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--code", help="Computer@code label")
     ] = None,
     structure_element: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--element", help="Element for example structure")
     ] = None,
     group_label: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--group", help="Group label for volume scan")
     ] = None,
     relax_type: Annotated[
-        Optional[RelaxType],
+        RelaxType | None,
         typer.Option("--relax-type", help="Type of relaxation")
     ] = None,
     generic_params: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--params",
             help="Parameters as key=value,key=value (e.g., encut=500,max_steps=100)"
         )
     ] = None,
     kpoints: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--kpoints", help="K-point mesh as kx,ky,kz")
     ] = None,
     continue_on_failure: Annotated[
@@ -74,7 +72,7 @@ def run(
         typer.Option("--continue-on-failure", help="Continue on calculation failure")
     ] = False,
     max_structures: Annotated[
-        Optional[int],
+        int | None,
         typer.Option("--max-structures", help="Max structures for volume scan")
     ] = None,
     use_generic: Annotated[
@@ -95,14 +93,14 @@ def run(
         logger.info(f"Running {mode} with engine={engine}")
     except Exception as e:
         console.print(f"[red]Error:[/red] Failed to load AiiDA profile: {e}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     try:
         code = orm.load_code(f"{engine}@{code_label}")
     except Exception as exc:
         console.print(f"[red]Error:[/red] Code '{engine}@{code_label}' not found: {exc}")
         console.print("Run 'verdi code list' to see available codes.")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     params_dict = _parse_params(generic_params)
     parameters = orm.Dict(dict=params_dict)
@@ -122,7 +120,9 @@ def run(
         else:
             kpoints_data = None
 
-        from aiida_relax_project.workflows.single_point import DynamicSinglePointWorkChain
+        from aiida_relax_project.workflows.single_point import (
+            DynamicSinglePointWorkChain,
+        )
 
         builder = SinglePointBuilder(config)
         inputs = builder.build_inputs(
@@ -199,7 +199,6 @@ def config_show(
     ] = False,
 ) -> None:
     """Show current configuration."""
-    import json
 
     config = get_config()
 
@@ -243,7 +242,7 @@ def engines() -> None:
 
     for engine_name in EngineFactory.supported_engines():
         try:
-            adapter = EngineFactory.create(engine_name)
+            EngineFactory.create(engine_name)
             table.add_row(engine_name, "[green]Available[/green]")
         except Exception as e:
             table.add_row(engine_name, f"[red]Error: {e}[/red]")
@@ -258,7 +257,7 @@ def validate(
         typer.Argument(help="Structure file (POSCAR, cif, etc.)")
     ] = None,
     engine: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--engine", "-e", help="Engine to validate against")
     ] = None,
 ) -> None:
@@ -295,7 +294,7 @@ def validate(
         raise typer.Exit(1) from None
 
 
-def _parse_params(param_string: Optional[str]) -> dict:
+def _parse_params(param_string: str | None) -> dict:
     """Parse parameter string into dictionary."""
     if not param_string:
         return {}
@@ -334,11 +333,9 @@ def main(
     import logging
 
     if quiet:
-        level = logging.WARNING
+        logging.getLogger("aiida_relax_project").setLevel(logging.WARNING)
     elif verbose:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
+        logging.getLogger("aiida_relax_project").setLevel(logging.DEBUG)
 
     setup_logging()
 

@@ -2,26 +2,17 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-
 import pytest
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 import tomli_w
 
 from aiida_relax_project.core.config import (
-    ProjectConfig,
-    VaspConfig,
     Cp2kConfig,
-    RelaxConfig,
-    VolumeScanConfig,
     GwConfig,
     MetadataOptions,
-    load_config,
+    ProjectConfig,
+    VaspConfig,
     _merge_configs,
+    load_config,
 )
 
 

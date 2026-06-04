@@ -1,4 +1,4 @@
-from aiida import orm, load_profile
+from aiida import load_profile, orm
 from aiida.engine import submit
 from aiida.plugins import DataFactory
 

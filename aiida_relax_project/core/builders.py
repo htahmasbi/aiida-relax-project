@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from aiida import orm
-    from aiida.orm import StructureData, Dict, KpointsData, AbstractCode, Str
+    from aiida.orm import AbstractCode, Dict, KpointsData, StructureData
+
     from aiida_relax_project.core.enums import EngineType, RelaxType
 
 from aiida import orm
 
-from aiida_relax_project.core.engine import EngineFactory, BaseEngineAdapter
-from aiida_relax_project.core.config import ProjectConfig, _merge_configs as _deep_merge
+from aiida_relax_project.core.config import ProjectConfig
+from aiida_relax_project.core.config import _merge_configs as _deep_merge
+from aiida_relax_project.core.engine import EngineFactory
 from aiida_relax_project.core.enums import EngineType
 
 logger = logging.getLogger(__name__)
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 class BaseWorkflowBuilder(ABC):
     """Abstract base class for workflow builders."""
 
-    def __init__(self, config: Optional[ProjectConfig] = None) -> None:
+    def __init__(self, config: ProjectConfig | None = None) -> None:
         self._config = config
 
     @property
@@ -69,9 +71,9 @@ class BaseWorkflowBuilder(ABC):
     @abstractmethod
     def build_inputs(
         self,
-        structure: "StructureData",
-        code: "AbstractCode",
-        parameters: "Dict",
+        structure: StructureData,
+        code: AbstractCode,
+        parameters: Dict,
         **kwargs,
     ) -> dict[str, Any]:
         """Build the complete input dictionary for the workflow."""
@@ -83,13 +85,13 @@ class SinglePointBuilder(BaseWorkflowBuilder):
 
     def build_inputs(
         self,
-        structure: "StructureData",
-        code: "AbstractCode",
-        parameters: "Dict",
-        engine: Optional[EngineType] = None,
-        kpoints: Optional["KpointsData"] = None,
+        structure: StructureData,
+        code: AbstractCode,
+        parameters: Dict,
+        engine: EngineType | None = None,
+        kpoints: KpointsData | None = None,
         use_generic_params: bool = False,
-        metadata_options: Optional[dict] = None,
+        metadata_options: dict | None = None,
         **extra_inputs,
     ) -> dict[str, Any]:
         """Build inputs for a single-point calculation.
@@ -148,15 +150,15 @@ class RelaxationBuilder(BaseWorkflowBuilder):
 
     def build_inputs(
         self,
-        structure: "StructureData",
-        code: "AbstractCode",
-        parameters: "Dict",
-        engine: Optional[EngineType] = None,
-        relaxation_type: Optional["RelaxType"] = None,
-        kpoints: Optional["KpointsData"] = None,
+        structure: StructureData,
+        code: AbstractCode,
+        parameters: Dict,
+        engine: EngineType | None = None,
+        relaxation_type: RelaxType | None = None,
+        kpoints: KpointsData | None = None,
         use_generic_params: bool = False,
-        convergence_criteria: Optional["Dict"] = None,
-        metadata_options: Optional[dict] = None,
+        convergence_criteria: Dict | None = None,
+        metadata_options: dict | None = None,
         **extra_inputs,
     ) -> dict[str, Any]:
         """Build inputs for a relaxation calculation.
@@ -222,14 +224,14 @@ class VolumeScanBuilder(BaseWorkflowBuilder):
 
     def build_inputs(
         self,
-        structure_group: "orm.Group",
-        code: "AbstractCode",
-        parameters: "Dict",
-        engine: Optional[EngineType] = None,
-        kpoints: Optional["KpointsData"] = None,
+        structure_group: orm.Group,
+        code: AbstractCode,
+        parameters: Dict,
+        engine: EngineType | None = None,
+        kpoints: KpointsData | None = None,
         use_generic_params: bool = False,
         continue_on_failure: bool = False,
-        metadata_options: Optional[dict] = None,
+        metadata_options: dict | None = None,
         **extra_inputs,
     ) -> dict[str, Any]:
         """Build inputs for a volume scan.
@@ -283,7 +285,7 @@ class VolumeScanBuilder(BaseWorkflowBuilder):
         return inputs
 
 
-def create_example_structure(element: str = "Si") -> "orm.StructureData":
+def create_example_structure(element: str = "Si") -> orm.StructureData:
     """Create a simple example structure for testing.
 
     Args:
@@ -292,9 +294,8 @@ def create_example_structure(element: str = "Si") -> "orm.StructureData":
     Returns:
         Stored StructureData instance
     """
-    from ase.build import bulk
-
     from aiida.plugins import DataFactory
+    from ase.build import bulk
 
     StructureData = DataFactory("core.structure")
 
@@ -308,10 +309,10 @@ def create_example_structure(element: str = "Si") -> "orm.StructureData":
 
 def fetch_structures_from_optimade(
     group_label: str,
-    elements: Optional[list[str]] = None,
+    elements: list[str] | None = None,
     max_structures: int = 5,
-    modifier: Optional[callable] = None,
-) -> "orm.Group":
+    modifier: callable | None = None,
+) -> orm.Group:
     """Fetch structures from OPTIMADE and add to a group.
 
     Args:
@@ -325,8 +326,12 @@ def fetch_structures_from_optimade(
     """
     from aiida import orm
     from aiida.common import NotExistent
+
     from aiida_relax_project.datasets.mc2d_optimade import fetch_mc2d_structures
-    from aiida_relax_project.transformations.structures import rotate_xy_to_xz, make_supercell_3x3
+    from aiida_relax_project.transformations.structures import (
+        make_supercell_3x3,
+        rotate_xy_to_xz,
+    )
 
     try:
         group = orm.Group.collection.get(label=group_label)

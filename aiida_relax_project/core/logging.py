@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import logging
 import sys
-from pathlib import Path
-from typing import Optional
 from contextlib import contextmanager
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -17,14 +16,14 @@ class LoggingConfig(BaseModel):
     level: str = "INFO"
     format: str = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
     date_format: str = "%Y-%m-%d %H:%M:%S"
-    file_path: Optional[str] = None
+    file_path: str | None = None
     propagate: bool = False
 
 
 _DEFAULT_CONFIG = LoggingConfig()
 
 
-def setup_logging(config: Optional[LoggingConfig] = None) -> None:
+def setup_logging(config: LoggingConfig | None = None) -> None:
     """Configure logging for the package.
 
     Args:

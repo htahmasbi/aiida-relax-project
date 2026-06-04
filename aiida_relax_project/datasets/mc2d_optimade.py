@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Callable, Optional
+
+from collections.abc import Callable
+
 import requests
 from pymatgen.core import Lattice, Structure
-
 
 MC2D_STRUCTURES_URL = "https://optimade.materialscloud.org/main/mc2d/v1/structures"
 
@@ -24,10 +25,10 @@ def optimade_entry_to_pymatgen(entry: dict) -> Structure:
 
 
 def fetch_mc2d_structures(
-    optimade_filter: Optional[str] = None,
+    optimade_filter: str | None = None,
     page_limit: int = 100,
-    max_structures: Optional[int] = None,
-    modifier: Optional[Callable[[Structure], Structure]] = None,
+    max_structures: int | None = None,
+    modifier: Callable[[Structure], Structure] | None = None,
 ) -> list[dict]:
     """
     Fetch structures from the MC2D OPTIMADE endpoint.
@@ -72,7 +73,7 @@ def fetch_mc2d_structures(
         params["filter"] = optimade_filter
 
     results: list[dict] = []
-    url: Optional[str] = MC2D_STRUCTURES_URL
+    url: str | None = MC2D_STRUCTURES_URL
 
     while url:
         response = requests.get(url, params=params, timeout=60)

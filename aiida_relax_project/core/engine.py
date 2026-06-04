@@ -8,16 +8,16 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from aiida import orm
-    from aiida.orm import StructureData, Dict, KpointsData, AbstractCode
-    from aiida_relax_project.core.enums import EngineType, RunType, RelaxType
+
+    from aiida_relax_project.core.enums import EngineType, RelaxType, RunType
 
 from aiida.plugins import CalculationFactory, WorkflowFactory
 
-from aiida_relax_project.core.enums import RelaxType, RESOURCE_PRESETS
+from aiida_relax_project.core.enums import RESOURCE_PRESETS, RelaxType
 from aiida_relax_project.core.exceptions import EngineError, StructureValidationError
 
 logger = logging.getLogger(__name__)
@@ -58,11 +58,11 @@ class BaseEngineAdapter(ABC):
         self,
         generic_params: dict,
         run_type: RunType = "energy",
-    ) -> "orm.Dict":
+    ) -> orm.Dict:
         """Translate generic parameters to engine format."""
         raise NotImplementedError
 
-    def build_kpoints(self, mesh: list[int]) -> "orm.KpointsData":
+    def build_kpoints(self, mesh: list[int]) -> orm.KpointsData:
         """Create k-points data with engine-appropriate settings."""
         from aiida.orm import KpointsData
 
@@ -70,7 +70,7 @@ class BaseEngineAdapter(ABC):
         kpoints.set_kpoints_mesh(mesh)
         return kpoints
 
-    def validate_structure(self, structure: "orm.StructureData") -> None:
+    def validate_structure(self, structure: orm.StructureData) -> None:
         """Validate structure is suitable for this engine."""
         if structure.pbc != (True, True, True):
             raise StructureValidationError(
@@ -106,7 +106,7 @@ class VaspAdapter(BaseEngineAdapter):
         self,
         generic_params: dict,
         run_type: RunType = "energy",
-    ) -> "orm.Dict":
+    ) -> orm.Dict:
         """Build VASP INCAR parameters from generic params."""
         from aiida.orm import Dict
 
@@ -190,7 +190,7 @@ class Cp2kAdapter(BaseEngineAdapter):
         self,
         generic_params: dict,
         run_type: RunType = "energy",
-    ) -> "orm.Dict":
+    ) -> orm.Dict:
         """Build CP2K input parameters from generic params."""
         from aiida.orm import Dict
 
@@ -302,7 +302,7 @@ class Cp2kAdapter(BaseEngineAdapter):
         raw_params = generic_params.get("raw_parameters", {})
         if raw_params:
             cp2k_params = _deep_merge(cp2k_params, raw_params)
-            logger.debug(f"Merged raw CP2K parameter overrides")
+            logger.debug("Merged raw CP2K parameter overrides")
 
         logger.debug(f"Built CP2K parameters for run_type={run_type}")
         return Dict(dict=cp2k_params)
@@ -319,7 +319,7 @@ class Cp2kAdapter(BaseEngineAdapter):
             "cell_opt": cell_opt_map.get(relax_type, "FULL"),
         }
 
-    def validate_structure(self, structure: "orm.StructureData") -> None:
+    def validate_structure(self, structure: orm.StructureData) -> None:
         """Validate structure for CP2K, including element support."""
         super().validate_structure(structure)
 

@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
-from typing import Any, Literal, Optional
-import logging
+from typing import Any, Literal
 
 from pydantic import (
     BaseModel,
     Field,
+    computed_field,
     field_validator,
     model_validator,
-    computed_field,
 )
 from pydantic_settings import BaseSettings
 
-from aiida_relax_project.core.enums import RelaxType, RESOURCE_PRESETS
+from aiida_relax_project.core.enums import RESOURCE_PRESETS, RelaxType
 from aiida_relax_project.utils.cp2k_parsers import (
-    parse_cp2k_data_file,
     resolve_potential_name,
     resolve_ri_basis_name,
 )
@@ -79,7 +78,7 @@ class Cp2kConfig(BaseModel):
     basis_set_mapping: dict[str, str] = Field(default_factory=dict)
     potential_mapping: dict[str, str] = Field(default_factory=dict)
     ri_basis_set_mapping: dict[str, str] = Field(default_factory=dict)
-    ri_basis_set_file: Optional[str] = Field(default=None)
+    ri_basis_set_file: str | None = Field(default=None)
     raw_parameters: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("kpoints_mesh")
@@ -245,7 +244,7 @@ class ProjectConfig(BaseSettings):
 
     engine: Literal["vasp", "cp2k"] = Field(default="vasp")
     code_label: str = Field(default="localhost")
-    aiida_profile: Optional[str] = None
+    aiida_profile: str | None = None
 
     resource_preset: str = Field(default="default")
 
@@ -268,7 +267,7 @@ class ProjectConfig(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def setup_environment(self) -> "ProjectConfig":
+    def setup_environment(self) -> ProjectConfig:
         if self.aiida_profile:
             os.environ["AIIDA_PROFILE"] = self.aiida_profile
         return self
@@ -388,7 +387,7 @@ def _merge_configs(base: dict, overrides: dict) -> dict:
     return result
 
 
-_config: Optional[ProjectConfig] = None
+_config: ProjectConfig | None = None
 
 
 def get_config() -> ProjectConfig:

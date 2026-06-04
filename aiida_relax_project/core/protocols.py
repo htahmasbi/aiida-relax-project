@@ -6,18 +6,19 @@ must follow, enabling static type checking while maintaining flexibility.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from aiida.orm import StructureData, Dict, KpointsData, AbstractCode
-    from aiida_relax_project.core.enums import EngineType, RunType, RelaxType
+    from aiida.orm import AbstractCode, Dict, KpointsData, StructureData
+
+    from aiida_relax_project.core.enums import EngineType, RelaxType, RunType
 
 
 @runtime_checkable
 class SupportsSubmit(Protocol):
     """Protocol for AiiDA process submission."""
 
-    def submit(self, **kwargs) -> "ProcessNode":  # type: ignore[name-defined]
+    def submit(self, **kwargs) -> ProcessNode:  # type: ignore[name-defined]  # noqa: F821
         """Submit the process to the AiiDA daemon."""
         ...
 
@@ -29,7 +30,7 @@ class ParameterBuilder(Protocol):
         self,
         engine: EngineType,
         generic_params: dict,
-    ) -> "Dict":
+    ) -> Dict:
         """Build engine-specific parameters from generic ones.
 
         Args:
@@ -47,10 +48,10 @@ class InputBuilder(Protocol):
 
     def __call__(
         self,
-        code: "AbstractCode",
-        structure: "StructureData",
-        parameters: "Dict",
-        kpoints: "KpointsData | None" = None,
+        code: AbstractCode,
+        structure: StructureData,
+        parameters: Dict,
+        kpoints: KpointsData | None = None,
         metadata_options: dict | None = None,
         **extra_inputs,
     ) -> dict:
@@ -75,11 +76,11 @@ class WorkflowBuilder(Protocol):
 
     def __call__(
         self,
-        structure: "StructureData",
-        code: "AbstractCode",
-        parameters: "Dict",
+        structure: StructureData,
+        code: AbstractCode,
+        parameters: Dict,
         relaxation_type: RelaxType | None = None,
-        kpoints: "KpointsData | None" = None,
+        kpoints: KpointsData | None = None,
         **workflow_options,
     ) -> dict:
         """Build complete inputs for a relaxation workflow.
@@ -115,15 +116,15 @@ class EngineAdapter(Protocol):
         """Return the appropriate workchain class for the run type."""
         ...
 
-    def build_parameters(self, generic_params: dict) -> "Dict":  # noqa: N802
+    def build_parameters(self, generic_params: dict) -> Dict:  # noqa: N802
         """Translate generic parameters to engine format."""
         ...
 
-    def build_kpoints(self, mesh: list[int]) -> "KpointsData":  # noqa: N802
+    def build_kpoints(self, mesh: list[int]) -> KpointsData:  # noqa: N802
         """Create k-points data with engine-appropriate settings."""
         ...
 
-    def validate_structure(self, structure: "StructureData") -> None:  # noqa: N802
+    def validate_structure(self, structure: StructureData) -> None:  # noqa: N802
         """Validate structure is suitable for this engine."""
         ...
 
