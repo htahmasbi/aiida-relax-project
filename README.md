@@ -1,3 +1,4 @@
+![CI Workflow test](https://github.com/htahmasbi/aiida-relax-project/actions/workflows/ci.yml/badge.svg)
 # aiida-relax-project
 
 Unified AiiDA workflows for VASP and CP2K calculations with a single CLI.
