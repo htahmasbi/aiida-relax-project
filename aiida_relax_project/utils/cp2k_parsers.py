@@ -132,10 +132,21 @@ def resolve_basis_names(
     return names
 
 
-def resolve_potential_name(potential_file: str, element: str) -> str | None:
-    """Return the potential name for *element* in *potential_file*."""
+def resolve_potential_name(
+    potential_file: str,
+    element: str,
+    pattern: str | None = "GTH-",
+) -> str | None:
+    """Return the potential name for *element* in *potential_file*.
+
+    When *pattern* is given (default ``"GTH-"``), only names containing
+    it are considered — this avoids accidentally picking an all-electron
+    entry when a pseudopotential is wanted.
+    """
     entries = parse_cp2k_data_file(potential_file)
     names = [entry.name for entry in entries.get(element, [])]
+    if pattern:
+        names = [n for n in names if pattern in n]
     return names[0] if names else None
 
 
@@ -171,10 +182,12 @@ def resolve_ri_basis_name(
 def _select_basis_by_accuracy(
     entries: list[BasisEntry], target: float
 ) -> str | None:
-    """Pick the best entry with accuracy ≤ *target*.
+    """Pick the entry with the worst accuracy still ≤ *target*.
 
-    If no entry meets the target, falls back to the best accuracy overall
-    (smallest value).  If no entry has accuracy metadata, returns the first.
+    This selects the cheapest basis that meets the target (largest
+    accuracy value ≤ *target*).  If no entry meets the target, falls
+    back to the best accuracy overall (smallest value).  If no entry
+    has accuracy metadata, returns the first.
     """
     if not entries:
         return None
@@ -182,14 +195,10 @@ def _select_basis_by_accuracy(
     if not candidates:
         return entries[0].name
 
-    # Best entry with accuracy ≤ target
-    best = min(
-        (e for e in candidates if e.accuracy <= target),
-        key=lambda e: e.accuracy,
-        default=None,
-    )
-    if best is not None:
-        return best.name
+    # Entries that meet the target — pick the cheapest (largest accuracy)
+    within = [e for e in candidates if e.accuracy <= target]
+    if within:
+        return max(within, key=lambda e: e.accuracy).name
 
-    # Fall back to the best accuracy overall
+    # Fall back to the best accuracy overall (smallest error)
     return min(candidates, key=lambda e: e.accuracy).name

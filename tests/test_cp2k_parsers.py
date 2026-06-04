@@ -48,7 +48,7 @@ class TestSelectBasisByAccuracy:
             self.make_entry("fine", 1e-6),
         ]
         result = _select_basis_by_accuracy(entries, 1e-5)
-        assert result == "fine"
+        assert result == "medium"
 
     def test_no_accuracy_falls_back_to_first(self):
         entries = [
@@ -64,7 +64,7 @@ class TestSelectBasisByAccuracy:
             self.make_entry("fine", 1e-6),
         ]
         result = _select_basis_by_accuracy(entries, 1e-5)
-        assert result == "fine"
+        assert result == "medium"
 
     def test_single_entry(self):
         entries = [self.make_entry("only", 1e-6)]
@@ -229,7 +229,7 @@ H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
         result = resolve_ri_basis_name(
             str(f), "H", accuracy_target=1e-5,
         )
-        assert result == "RI_aug-DZVP-GTH_H_RI_001_error_1e-07"
+        assert result == "RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_002_error_1e-05"
 
     def test_accuracy_target_coarse(self, tmp_path: Path) -> None:
         f = tmp_path / "RI_BASIS"
@@ -237,7 +237,7 @@ H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
         result = resolve_ri_basis_name(
             str(f), "H", accuracy_target=1e-3,
         )
-        assert result == "RI_aug-DZVP-GTH_H_RI_001_error_1e-07"
+        assert result == "RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_001_error_1e-04"
 
     def test_no_accuracy_in_file(self, tmp_path: Path) -> None:
         f = tmp_path / "RI_BASIS"
@@ -276,7 +276,7 @@ H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
             accuracy_target=1e-5,
             orb_basis="aug-SZV-MOLOPT-GTH-tier-1",
         )
-        assert result == "RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_003_error_1e-06"
+        assert result == "RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_002_error_1e-05"
 
     def test_fallback_when_none_meets_target(self, tmp_path: Path) -> None:
         f = tmp_path / "RI_BASIS"
