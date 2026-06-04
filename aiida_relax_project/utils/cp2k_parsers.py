@@ -56,24 +56,24 @@ def parse_cp2k_data_file(path: str) -> dict[str, list[BasisEntry]]:
 
     The format is::
 
+        # comment with accuracy
         Element  Name
           <data lines>
-        # comment with accuracy
 
-    Comment lines appearing after a header (before the next header) are
-    associated with that entry.
+    Comment lines appearing before a header belong to that entry.
     """
     entries: dict[str, list[BasisEntry]] = {}
 
     current_element: str | None = None
     current_name: str | None = None
     current_header: str | None = None
-    current_comment: list[str] = []
+    prev_comment: list[str] = []
+    next_comment: list[str] = []
     in_entry = False
 
     def _save() -> None:
         if current_element is not None and current_name is not None:
-            comment = " ".join(current_comment).strip()
+            comment = " ".join(prev_comment).strip()
             entries.setdefault(current_element, []).append(
                 BasisEntry(
                     name=current_name,
@@ -89,19 +89,19 @@ def parse_cp2k_data_file(path: str) -> dict[str, list[BasisEntry]]:
                 continue
 
             if stripped.startswith("#"):
-                # Strip the leading "#" (and maybe whitespace) for storage
                 comment_text = stripped.lstrip("#").strip()
                 if comment_text:
-                    current_comment.append(comment_text)
+                    next_comment.append(comment_text)
                 continue
 
             m = _HEADER_RE.match(stripped)
             if m:
                 _save()
+                prev_comment = next_comment
+                next_comment = []
                 current_element = m.group(1)
                 current_name = m.group(2)
                 current_header = stripped
-                current_comment = []
                 in_entry = True
 
     if in_entry:

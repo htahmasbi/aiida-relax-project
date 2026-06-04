@@ -85,14 +85,14 @@ class TestSelectBasisByAccuracy:
 
 class TestParseCp2kDataFile:
     SAMPLE = """\
+# RI basis set for H, GTH pseudo, relative accuracy of RI-MP2: 1.2e-06
 H  aug-SZV-MOLOPT-GTH-tier-1
   1    2
   3    4
-# RI basis set for H, GTH pseudo, relative accuracy of RI-MP2: 1.2e-06
+# RI basis set for H, GTH pseudo, relative accuracy of RI-MP2: 8.5e-07
 H  aug-TZV-MOLOPT-GTH-tier-2
   5    6
   7    8
-# RI basis set for H, GTH pseudo, relative accuracy of RI-MP2: 8.5e-07
 N  DZVP-MOLOPT-GTH
   9   10
 """
@@ -205,18 +205,17 @@ class TestResolvePotentialName:
 
 class TestResolveRiBasisName:
     SAMPLE = """\
+# relative accuracy of RI-MP2: 1e-04
 H  RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_001_error_1e-04
   1  2
-# relative accuracy of RI-MP2: 1e-04
+# relative accuracy of RI-MP2: 1e-05
 H  RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_002_error_1e-05
   3  4
-# relative accuracy of RI-MP2: 1e-05
+# relative accuracy of RI-MP2: 1e-06
 H  RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_003_error_1e-06
   5  6
-# relative accuracy of RI-MP2: 1e-06
 H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
   7  8
-# relative accuracy of RI-MP2: 1e-07
 """
 
     def test_no_accuracy_target(self, tmp_path: Path) -> None:
@@ -282,12 +281,12 @@ H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
     def test_fallback_when_none_meets_target(self, tmp_path: Path) -> None:
         f = tmp_path / "RI_BASIS"
         f.write_text("""\
+# relative accuracy of RI-MP2: 8e-07
 H  RI_basis_fine_error_8e-07
   1  2
-# relative accuracy of RI-MP2: 8e-07
+# relative accuracy of RI-MP2: 3e-07
 H  RI_basis_finer_error_3e-07
   3  4
-# relative accuracy of RI-MP2: 3e-07
 """)
         result = resolve_ri_basis_name(
             str(f), "H", accuracy_target=1e-5,
