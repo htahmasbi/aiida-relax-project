@@ -162,6 +162,12 @@ def parse_args():
         help="OPTIMADE filter string (default: binary BN)",
     )
     parser.add_argument(
+        "--elements", type=str, nargs="*",
+        help="Only process structures whose elements are a subset of this set "
+             "(e.g. --elements B C N). Affects both the OPTIMADE query and "
+             "client-side post-filtering.",
+    )
+    parser.add_argument(
         "--group", type=str, default="mc2d_bn_gw",
         help="AiiDA group label for the structures (default: mc2d_bn_gw)",
     )
@@ -217,11 +223,34 @@ def main():
 
     group, _ = orm.Group.collection.get_or_create(args.group)
 
+    # Build OPTIMADE filter — use a broader HAS ANY query when
+    # --elements is given, then post-filter client-side.
+    if args.elements:
+        quoted = '","'.join(args.elements)
+        optimade_filter = (
+            f'elements HAS ANY "{quoted}" AND nelements=2'
+        )
+    else:
+        optimade_filter = args.filter
+
     data = fetch_mc2d_structures(
-        optimade_filter=args.filter,
+        optimade_filter=optimade_filter,
         max_structures=args.max_structures,
         modifier=modifier,
     )
+
+    # Client-side post-filter to keep only structures whose elements
+    # are a subset of the requested set.
+    if args.elements:
+        allowed = set(args.elements)
+        before = len(data)
+        data = [
+            item for item in data
+            if set(item["structure"].symbol_set).issubset(allowed)
+        ]
+        skipped = before - len(data)
+        if skipped:
+            print(f"  Skipped {skipped} structure(s) with elements outside {{{', '.join(sorted(allowed))}}}")
 
     gw = config.gw
 
