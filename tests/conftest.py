@@ -74,15 +74,21 @@ _engine.submit = MagicMock
 _engine.ProcessState = MagicMock
 sys.modules.setdefault("aiida.engine", _engine)
 
-# --- pymatgen ---
-_pymatgen = MagicMock()
-sys.modules.setdefault("pymatgen", _pymatgen)
-sys.modules.setdefault("pymatgen.core", MagicMock())
-sys.modules.setdefault("pymatgen.core.lattice", MagicMock())
-sys.modules.setdefault("pymatgen.core.structure", MagicMock())
+# --- pymatgen (mock only if not installed) ---
+try:
+    import pymatgen  # noqa: F401
+except ImportError:
+    _pymatgen = MagicMock()
+    sys.modules.setdefault("pymatgen", _pymatgen)
+    sys.modules.setdefault("pymatgen.core", MagicMock())
+    sys.modules.setdefault("pymatgen.core.lattice", MagicMock())
+    sys.modules.setdefault("pymatgen.core.structure", MagicMock())
 
-# --- requests ---
-sys.modules.setdefault("requests", MagicMock())
+# --- requests (mock only if not installed) ---
+try:
+    import requests  # noqa: F401
+except ImportError:
+    sys.modules.setdefault("requests", MagicMock())
 
 
 # ---------------------------------------------------------------------------

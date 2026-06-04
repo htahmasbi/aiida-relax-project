@@ -310,10 +310,11 @@ def _parse_params(param_string: Optional[str]) -> dict:
             params[key] = value.lower() == "true"
         elif value.isdigit():
             params[key] = int(value)
-        elif "." in value and value.replace(".", "").isdigit():
-            params[key] = float(value)
         else:
-            params[key] = value
+            try:
+                params[key] = float(value)
+            except ValueError:
+                params[key] = value
 
     return params
 
