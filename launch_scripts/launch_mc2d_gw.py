@@ -233,9 +233,14 @@ def main():
     else:
         optimade_filter = args.filter
 
+    # When client-side filtering is active, fetch extra structures so
+    # enough pass the post-filter; cap to *max_structures* afterwards.
+    fetch_limit = (
+        args.max_structures * 10 if args.elements else args.max_structures
+    )
     data = fetch_mc2d_structures(
         optimade_filter=optimade_filter,
-        max_structures=args.max_structures,
+        max_structures=fetch_limit,
         modifier=modifier,
     )
 
@@ -251,6 +256,8 @@ def main():
         skipped = before - len(data)
         if skipped:
             print(f"  Skipped {skipped} structure(s) with elements outside {{{', '.join(sorted(allowed))}}}")
+        # Trim back to the user-requested count
+        data = data[:args.max_structures]
 
     gw = config.gw
 
