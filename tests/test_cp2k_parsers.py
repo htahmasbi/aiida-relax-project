@@ -73,6 +73,14 @@ class TestSelectBasisByAccuracy:
     def test_no_entries(self):
         assert _select_basis_by_accuracy([], 1e-5) is None
 
+    def test_fallback_to_best_accuracy_when_none_within_target(self):
+        entries = [
+            self.make_entry("coarse", 3e-4),
+            self.make_entry("finer", 8e-5),
+        ]
+        result = _select_basis_by_accuracy(entries, 1e-5)
+        assert result == "finer"
+
 
 class TestParseCp2kDataFile:
     SAMPLE = """\
@@ -269,6 +277,21 @@ H  RI_aug-DZVP-GTH_H_RI_001_error_1e-07
             orb_basis="aug-SZV-MOLOPT-GTH-tier-1",
         )
         assert result == "RI_aug-SZV-MOLOPT-GTH-tier-1_H_RI_003_error_1e-06"
+
+    def test_fallback_when_none_meets_target(self, tmp_path: Path) -> None:
+        f = tmp_path / "RI_BASIS"
+        f.write_text("""\
+H  RI_basis_coarse_error_5e-04
+  1  2
+# relative accuracy of RI-MP2: 5e-04
+H  RI_basis_mid_error_2e-04
+  3  4
+# relative accuracy of RI-MP2: 2e-04
+""")
+        result = resolve_ri_basis_name(
+            str(f), "H", accuracy_target=1e-5,
+        )
+        assert result == "RI_basis_mid_error_2e-04"
 
     def test_orb_basis_no_match(self, tmp_path: Path) -> None:
         f = tmp_path / "RI_BASIS"
