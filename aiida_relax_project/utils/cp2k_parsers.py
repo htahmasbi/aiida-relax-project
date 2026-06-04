@@ -182,12 +182,12 @@ def resolve_ri_basis_name(
 def _select_basis_by_accuracy(
     entries: list[BasisEntry], target: float
 ) -> str | None:
-    """Pick the entry with the worst accuracy still ≤ *target*.
+    """Pick the entry with the largest accuracy value ≥ *target*.
 
-    This selects the cheapest basis that meets the target (largest
-    accuracy value ≤ *target*).  If no entry meets the target, falls
-    back to the best accuracy overall (smallest value).  If no entry
-    has accuracy metadata, returns the first.
+    This selects the cheapest basis that still meets the target
+    (largest accuracy value ≥ *target*).  If no entry meets the
+    target, falls back to the best accuracy overall (smallest
+    value).  If no entry has accuracy metadata, returns the first.
     """
     if not entries:
         return None
@@ -196,7 +196,7 @@ def _select_basis_by_accuracy(
         return entries[0].name
 
     # Entries that meet the target — pick the cheapest (largest accuracy)
-    within = [e for e in candidates if e.accuracy <= target]
+    within = [e for e in candidates if e.accuracy >= target]
     if within:
         return max(within, key=lambda e: e.accuracy).name
 
