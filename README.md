@@ -3,6 +3,8 @@
 
 Unified AiiDA workflows for VASP and CP2K calculations with a single CLI.
 
+![Python](https://img.shields.io/badge/python-3.10%20|%203.11%20|%203.12-blue)
+
 ## Features
 
 - **Engine-agnostic** — same workflow runs VASP or CP2K; generic parameters auto-translate
@@ -10,6 +12,7 @@ Unified AiiDA workflows for VASP and CP2K calculations with a single CLI.
 - **OPTIMADE integration** — fetch structures from materials databases (e.g. MC2D)
 - **Pydantic-validated config** via `config.toml`, env vars, or CLI flags
 - **Structure transformations** — rotation, vacuum padding, supercell expansion
+- **GW bandstructure** — CP2K GW with auto-resolved per-element RI basis and potentials
 - **CLI-first design** — `aiida-relax` command with Typer
 
 ## Project Structure
@@ -45,6 +48,9 @@ aiida-relax-project/
 │   └── transformations/
 │       ├── __init__.py
 │       └── structures.py                 # Rotate, supercell, vacuum
+│   └── utils/
+│       ├── __init__.py
+│       └── cp2k_parsers.py               # Basis/potential file parsers
 ├── launch_scripts/
 │   ├── launch_single_point.py            # Standalone VASP launch script
 │   ├── launch_unified.py                 # Unified argparse launcher
@@ -118,6 +124,21 @@ CODE_LABEL=my_cluster
 VASP_POTENTIAL_FAMILY=PBE.54
 DEFAULT_ENCUT=500
 ```
+
+## GW Configuration
+
+CP2K GW bandstructure calculations support per-element RI basis and potential settings via `[gw]` in `config.toml`:
+
+```toml
+[gw]
+auto_resolve = true
+# Or set explicitly:
+[gw.element_settings]
+B = {ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_B_RI_009_...", potential = "GTH-PBE-q3"}
+N = {ri_basis = "RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_025_...", potential = "GTH-PBE-q5"}
+```
+
+When `auto_resolve = true`, the code reads `basis_set_file`, `ri_basis_set_file`, and `potential_file` to extract the correct names for each element automatically.
 
 ## Running Tests
 
