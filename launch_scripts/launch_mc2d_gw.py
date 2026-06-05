@@ -44,39 +44,74 @@ def make_modifier(vacuum: float = 20.0, supercell: list[int] | None = None):
     return modifier
 
 
-def get_bandstructure_path(structure, special_points_override=None):
-    """Generate CP2K ``SPECIAL_POINT`` lines from a pymatgen Structure.
+def get_bandstructure_path(original_structure, special_points_override=None):
+    """Generate CP2K ``SPECIAL_POINT`` lines for a rotated 2D structure.
 
-    Uses pymatgen's ``HighSymmKpath`` to determine the high-symmetry
-    k-point path for the structure's space group.
+    The workflow builds a supercell and rotates from XY to XZ.  This
+    function computes the high-symmetry k-path from the **original**
+    (unrotated, primitive) structure and maps the fractional coordinates
+    to the rotated cell's reciprocal lattice.
+
+    ``rotate_xy_to_xz`` maps:
+        original b1 → rotated b1  (x, in-plane)
+        original b2 → rotated b3  (z, in-plane)
+        original b3 → rotated b2  (y, vacuum)
+
+    so k-points are mapped as *(k0, k1, k2*) → *(k0, k2, k1)*.
+
+    Only in-plane path segments (k_vac ≈ 0) are included.
 
     Args:
-        structure: Pymatgen ``Structure`` object.
-        special_points_override: Optional manual list of CP2K ``SPECIAL_POINT``
-            lines (e.g. ``["GAMMA  0.0  0.0  0.0", ...]``).  When provided,
-            the override is returned as-is.
+        original_structure: Pymatgen ``Structure`` **before** modifier.
+        special_points_override: Optional manual list of CP2K
+            ``SPECIAL_POINT`` lines.
 
     Returns:
-        List of strings, each formatted as ``"LABEL  x  y  z"``.
+        List of ``"LABEL  x  y  z"`` strings.
     """
     if special_points_override is not None:
         return special_points_override
 
     from pymatgen.symmetry.bandstructure import HighSymmKpath
 
-    kpath = HighSymmKpath(structure)
+    kpath = HighSymmKpath(original_structure)
     kpoints = kpath.kpath["kpoints"]
 
     label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
 
-    special_points = []
+    # Collect contiguous in-plane blocks across all segments.
+    # A point is in-plane when k_vac (= k[2] for OPTIMADE) ≈ 0.
+    inplane_blocks: list[list[str]] = []
+    current_block: list[str] = []
     for segment in kpath.kpath["path"]:
         for label in segment:
-            mapped_label = label_map.get(label, label)
-            coord = kpoints[label]
-            special_points.append(
-                f"{mapped_label}  {coord[0]:f}  {coord[1]:f}  {coord[2]:f}"
-            )
+            if abs(kpoints[label][2]) < 1e-10:
+                current_block.append(label)
+            else:
+                if current_block:
+                    inplane_blocks.append(current_block)
+                    current_block = []
+        if current_block:
+            inplane_blocks.append(current_block)
+            current_block = []
+
+    # Use the longest contiguous in-plane block
+    if not inplane_blocks:
+        inplane_blocks = [[]]
+        for segment in kpath.kpath["path"]:
+            inplane_blocks[0].extend(segment)
+
+    target = max(inplane_blocks, key=len)
+
+    special_points = []
+    for label in target:
+        mapped_label = label_map.get(label, label)
+        k_orig = kpoints[label]
+        # Map (k0, k1, k2) -> (k0, k2, k1) — put vacuum in y
+        special_points.append(
+            f"{mapped_label}  {k_orig[0]:f}  {k_orig[2]:f}  {k_orig[1]:f}"
+        )
+
     return special_points
 
 
@@ -182,7 +217,7 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC", original_structure=Non
                         "NPOINTS": gw.bs_npoints,
                         "UNITS": "B_VECTOR",
                         "SPECIAL_POINT": get_bandstructure_path(
-                            original_structure or structure, gw.special_points
+                            original_structure, gw.special_points
                         ),
                     },
                 },
