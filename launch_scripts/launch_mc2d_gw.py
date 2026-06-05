@@ -124,7 +124,7 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC", original_structure=Non
     if *gw.auto_resolve* is True and a setting is missing, it is resolved
     automatically from the configured files.
     """
-    mesh_str = " ".join(str(k) for k in gw.kpoints_mesh)
+    mesh_str = " ".join(str(k) for k in gw.get_kpoints_mesh())
     elements = sorted({site.species_string for site in structure})
 
     # --- resolve per-element settings ---------------------------------------
@@ -211,7 +211,7 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC", original_structure=Non
                         "EPS_FILTER": gw.eps_filter,
                         "CUTOFF_RADIUS_RI": gw.cutoff_radius_ri,
                         "REGULARIZATION_RI": gw.regularization_ri,
-                        "KPOINTS_W": " ".join(str(k) for k in gw.kpoints_w),
+                        "KPOINTS_W": " ".join(str(k) for k in gw.get_kpoints_w()),
                     },
                     "BANDSTRUCTURE_PATH": {
                         "NPOINTS": gw.bs_npoints,

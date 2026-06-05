@@ -128,8 +128,9 @@ class TestGwConfig:
     def test_defaults(self):
         cfg = GwConfig()
         assert cfg.auto_resolve is False
-        assert cfg.kpoints_mesh == [12, 1, 12]
-        assert cfg.kpoints_w == [12, 1, 12]
+        assert cfg.kpoints_mesh is None
+        assert cfg.get_kpoints_mesh() == [12, 1, 12]
+        assert cfg.get_kpoints_w() == [12, 1, 12]
         assert cfg.cutoff == 400
         assert cfg.periodic == "XZ"
         assert cfg.poisson_solver == "WAVELET"
@@ -138,6 +139,21 @@ class TestGwConfig:
         assert "N" in cfg.element_settings
         assert cfg.element_settings["B"].ri_basis.startswith("RI_")
         assert cfg.element_settings["N"].potential == "GTH-PBE-q5"
+
+    def test_kpoint_density_computation(self):
+        cfg = GwConfig(supercell=[2, 2, 1], kpoint_density=36)
+        assert cfg.get_kpoints_mesh() == [18, 1, 18]
+
+        cfg2 = GwConfig(supercell=[4, 4, 1], kpoint_density=36)
+        assert cfg2.get_kpoints_mesh() == [9, 1, 9]
+
+        cfg3 = GwConfig(supercell=[3, 3, 1], kpoint_density=24)
+        assert cfg3.get_kpoints_mesh() == [8, 1, 8]
+
+    def test_kpoint_mesh_override(self):
+        cfg = GwConfig(kpoints_mesh=[6, 1, 6])
+        assert cfg.get_kpoints_mesh() == [6, 1, 6]
+        assert cfg.get_kpoints_w() == [12, 1, 12]  # kpoints_w still auto
 
     def test_auto_resolve_flag(self):
         cfg = GwConfig(auto_resolve=True)

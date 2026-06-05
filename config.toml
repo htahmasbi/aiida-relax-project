@@ -116,9 +116,11 @@ potential_file = "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
 # When set, auto_resolve picks the best RI basis not exceeding this value.
 ri_basis_accuracy_target = 1e-5
 
-# K-point meshes
-kpoints_mesh = [12, 1, 12]
-kpoints_w = [12, 1, 12]
+# K-point density (effective k-points per primitive lattice vector).
+# The actual mesh is computed as mesh_i = max(1, round(density / supercell_i)).
+# For supercell [3,3,1], density=36 gives [12, 1, 12].
+# Set kpoints_mesh / kpoints_w explicitly below to override.
+kpoint_density = 36
 
 # Cutoffs and tolerances
 cutoff = 400

@@ -150,8 +150,23 @@ class GwConfig(BaseModel):
     potential_file: str = Field(
         default="/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
     )
-    kpoints_mesh: list[int] = Field(default_factory=lambda: [12, 1, 12])
-    kpoints_w: list[int] = Field(default_factory=lambda: [12, 1, 12])
+    kpoint_density: int = Field(
+        default=36, ge=1,
+        description="Effective k-point density per primitive lattice vector. "
+                    "The actual mesh is computed as "
+                    "mesh_i = max(1, round(density / supercell_i)). "
+                    "For BN 3x3 supercell, density=36 gives [12, 1, 12].",
+    )
+    kpoints_mesh: list[int] | None = Field(
+        default=None,
+        description="K-point mesh override. If None, auto-computed from "
+                    "kpoint_density and supercell.",
+    )
+    kpoints_w: list[int] | None = Field(
+        default=None,
+        description="GW k-point mesh override (KPOINTS_W). If None, "
+                    "auto-computed from kpoint_density and supercell.",
+    )
     periodic: str = Field(default="XZ")
     poisson_solver: str = Field(default="WAVELET")
     cutoff: int = Field(default=400, ge=0)
@@ -238,6 +253,26 @@ class GwConfig(BaseModel):
             )
 
         return result
+
+    def get_kpoints_mesh(self) -> list[int]:
+        """Return the SCF k-point mesh, auto-computed if not overridden."""
+        if self.kpoints_mesh is not None:
+            return self.kpoints_mesh
+        return self._compute_kpoint_mesh()
+
+    def get_kpoints_w(self) -> list[int]:
+        """Return the GW KPOINTS_W mesh, auto-computed if not overridden."""
+        if self.kpoints_w is not None:
+            return self.kpoints_w
+        return self._compute_kpoint_mesh()
+
+    def _compute_kpoint_mesh(self) -> list[int]:
+        sx, sy, _ = self.supercell
+        return [
+            max(1, round(self.kpoint_density / sx)),
+            1,
+            max(1, round(self.kpoint_density / sy)),
+        ]
 
 
 class ProjectConfig(BaseSettings):
