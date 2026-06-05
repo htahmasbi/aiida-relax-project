@@ -68,6 +68,8 @@ def fetch_mc2d_structures(
             "cartesian_site_positions",
             "species_at_sites",
             "species",
+            "space_group_symbol_hermann_mauguin",
+            "space_group_it_number",
         ]
     )
 
@@ -99,6 +101,18 @@ def fetch_mc2d_structures(
             structure = optimade_entry_to_pymatgen(entry)
             original_structure = structure.copy()
 
+            # Space group from OPTIMADE (often None) or computed locally
+            sg_opt = attributes.get("space_group_symbol_hermann_mauguin")
+            sg_num_opt = attributes.get("space_group_it_number")
+            if sg_opt is None:
+                try:
+                    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+                    sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
+                    sg_opt = sga.get_space_group_symbol()
+                    sg_num_opt = sga.get_space_group_number()
+                except Exception:
+                    pass
+
             if modifier is not None:
                 structure = modifier(structure)
 
@@ -110,6 +124,8 @@ def fetch_mc2d_structures(
                     "structure": structure,
                     "original_structure": original_structure,
                     "nsites": nsites,
+                    "space_group": sg_opt,
+                    "space_group_number": sg_num_opt,
                 }
             )
 

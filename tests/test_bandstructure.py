@@ -65,3 +65,53 @@ class TestGetBandstructurePath:
 
         assert path[0].startswith("GAMMA")
         assert path[-1].startswith("GAMMA")
+
+    def test_rectangular_path_detected(self):
+        """Rectangular in-plane lattice gives Γ→X→S→Y→Γ."""
+        # Orthorhombic cell: a=6, b=4, all angles 90°
+        lattice = Lattice.orthorhombic(6.0, 20.0, 4.0)
+        structure = Structure(lattice, ["H"], [[0, 0, 0]], coords_are_cartesian=False)
+        path = get_bandstructure_path(structure)
+
+        labels = [sp.split()[0] for sp in path]
+        assert labels == ["GAMMA", "X", "S", "Y", "GAMMA"]
+
+        # Coordinate swap: (k_a1, k_a2, 0) → (k_a1, 0, k_a2)
+        # X = (0.5, 0, 0) → (0.5, 0, 0)
+        x_parts = [sp for sp in path if sp.startswith("X")][0].split()
+        assert float(x_parts[1]) == 0.5  # x
+        assert float(x_parts[2]) == 0.0  # y (vacuum)
+        assert float(x_parts[3]) == 0.0  # z
+
+        # S = (0.5, 0.5, 0) → (0.5, 0, 0.5)
+        s_parts = [sp for sp in path if sp.startswith("S")][0].split()
+        assert float(s_parts[1]) == 0.5
+        assert float(s_parts[2]) == 0.0
+        assert float(s_parts[3]) == 0.5
+
+    def test_square_path_detected(self):
+        """Square in-plane lattice gives Γ→X→M→Γ."""
+        # a=b=5 in-plane, vacuum=20 in 3rd axis
+        lattice = Lattice.orthorhombic(5.0, 5.0, 20.0)
+        structure = Structure(lattice, ["H"], [[0, 0, 0]], coords_are_cartesian=False)
+        path = get_bandstructure_path(structure)
+
+        labels = [sp.split()[0] for sp in path]
+        assert labels == ["GAMMA", "X", "M", "GAMMA"]
+
+    def test_inse_rectangular_path(self):
+        """In₂Se₃-like rectangular cell gives Γ→X→S→Y→Γ instead of
+        pymatgen's monoclinic 3D path."""
+        # Original (pre-rotation) InSe: a=7.941, b=5.731, vacuum=20 in z.
+        # Atomic positions do not matter — only the in-plane lattice vectors
+        # are used for 2D Bravais lattice detection.
+        lattice = Lattice.orthorhombic(7.94104, 5.73095, 20.0)
+        structure = Structure(lattice, ["H"], [[0, 0, 0]], coords_are_cartesian=False)
+        path = get_bandstructure_path(structure)
+        labels = [sp.split()[0] for sp in path]
+        assert labels == ["GAMMA", "X", "S", "Y", "GAMMA"]
+
+        s_parts = [sp for sp in path if sp.startswith("S")][0].split()
+        assert float(s_parts[1]) == 0.5
+        assert float(s_parts[2]) == 0.0
+        assert float(s_parts[3]) == 0.5

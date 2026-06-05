@@ -44,13 +44,71 @@ def make_modifier(vacuum: float = 20.0, supercell: list[int] | None = None):
     return modifier
 
 
+def get_2d_bravais_lattice(original_structure):
+    """Detect the 2D in-plane Bravais lattice type.
+
+    Examines the first two lattice vectors (in-plane for OPTIMADE MC2D)
+    and returns ``"square"``, ``"hexagonal"``, ``"rectangular"``, or
+    ``None`` (oblique / unknown).
+    """
+    import numpy as np
+
+    a1 = np.array(original_structure.lattice.matrix[0])
+    a2 = np.array(original_structure.lattice.matrix[1])
+
+    len_a1 = np.linalg.norm(a1)
+    len_a2 = np.linalg.norm(a2)
+    if len_a1 < 1e-10 or len_a2 < 1e-10:
+        return None
+
+    cos_angle = np.dot(a1, a2) / (len_a1 * len_a2)
+    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+    angle = np.degrees(np.arccos(cos_angle))
+    ratio = len_a1 / len_a2
+
+    ANGLE_TOL = 5.0
+    RATIO_TOL = 0.05
+
+    if abs(angle - 90) < ANGLE_TOL:
+        return "square" if abs(ratio - 1) < RATIO_TOL else "rectangular"
+    if abs(angle - 120) < ANGLE_TOL and abs(ratio - 1) < RATIO_TOL:
+        return "hexagonal"
+    return None
+
+
+def _inplane_kpath_2d(lattice_type):
+    """Standard 2D high-symmetry k-path ``(label, k_a1, k_a2, 0)``."""
+    paths = {
+        "square": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("X", 0.5, 0.0, 0.0),
+            ("M", 0.5, 0.5, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+        "rectangular": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("X", 0.5, 0.0, 0.0),
+            ("S", 0.5, 0.5, 0.0),
+            ("Y", 0.0, 0.5, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+        "hexagonal": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("M", 0.5, 0.0, 0.0),
+            ("K", 1 / 3, 1 / 3, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+    }
+    return paths[lattice_type]
+
+
 def get_bandstructure_path(original_structure, special_points_override=None):
     """Generate CP2K ``SPECIAL_POINT`` lines for a rotated 2D structure.
 
-    The workflow builds a supercell and rotates from XY to XZ.  This
-    function computes the high-symmetry k-path from the **original**
-    (unrotated, primitive) structure and maps the fractional coordinates
-    to the rotated cell's reciprocal lattice.
+    For 2D materials the path is determined automatically from the
+    in-plane Bravais lattice (rectangular, square, hexagonal).  For
+    other cases it falls back to pymatgen's ``HighSymmKpath`` with
+    in-plane filtering.
 
     ``rotate_xy_to_xz`` maps:
         original b1 → rotated b1  (x, in-plane)
@@ -58,8 +116,6 @@ def get_bandstructure_path(original_structure, special_points_override=None):
         original b3 → rotated b2  (y, vacuum)
 
     so k-points are mapped as *(k0, k1, k2*) → *(k0, k2, k1)*.
-
-    Only in-plane path segments (k_vac ≈ 0) are included.
 
     Args:
         original_structure: Pymatgen ``Structure`` **before** modifier.
@@ -72,15 +128,24 @@ def get_bandstructure_path(original_structure, special_points_override=None):
     if special_points_override is not None:
         return special_points_override
 
+    # --- 2D Bravais lattice path -----------------------------------------
+    lattice_type = get_2d_bravais_lattice(original_structure)
+    if lattice_type is not None:
+        inplane = _inplane_kpath_2d(lattice_type)
+        # Map (k0, k1, k2) -> (k0, k2, k1) — put vacuum in y
+        return [
+            f"{label}  {k0:f}  {k2:f}  {k1:f}"
+            for label, k0, k1, k2 in inplane
+        ]
+
+    # --- Fallback: pymatgen HighSymmKpath with in-plane filtering --------
     from pymatgen.symmetry.bandstructure import HighSymmKpath
 
     kpath = HighSymmKpath(original_structure)
     kpoints = kpath.kpath["kpoints"]
-
     label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
 
-    # Collect contiguous in-plane blocks across all segments.
-    # A point is in-plane when k_vac (= k[2] for OPTIMADE) ≈ 0.
+    # Collect contiguous in-plane blocks (k_vac = k[2] for OPTIMADE).
     inplane_blocks: list[list[str]] = []
     current_block: list[str] = []
     for segment in kpath.kpath["path"]:
@@ -95,7 +160,6 @@ def get_bandstructure_path(original_structure, special_points_override=None):
             inplane_blocks.append(current_block)
             current_block = []
 
-    # Use the longest contiguous in-plane block
     if not inplane_blocks:
         inplane_blocks = [[]]
         for segment in kpath.kpath["path"]:
@@ -103,16 +167,10 @@ def get_bandstructure_path(original_structure, special_points_override=None):
 
     target = max(inplane_blocks, key=len)
 
-    special_points = []
-    for label in target:
-        mapped_label = label_map.get(label, label)
-        k_orig = kpoints[label]
-        # Map (k0, k1, k2) -> (k0, k2, k1) — put vacuum in y
-        special_points.append(
-            f"{mapped_label}  {k_orig[0]:f}  {k_orig[2]:f}  {k_orig[1]:f}"
-        )
-
-    return special_points
+    return [
+        f"{label_map.get(label, label)}  {kpoints[label][0]:f}  {kpoints[label][2]:f}  {kpoints[label][1]:f}"
+        for label in target
+    ]
 
 
 def make_gw_parameters(gw, structure, scf_guess="ATOMIC", original_structure=None):
