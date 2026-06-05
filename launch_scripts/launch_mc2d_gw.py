@@ -44,71 +44,115 @@ def make_modifier(vacuum: float = 20.0, supercell: list[int] | None = None):
     return modifier
 
 
-def get_2d_bravais_lattice(original_structure):
-    """Detect the 2D in-plane Bravais lattice type.
+def _inplane_path_from_crystal_system(crystal_system):
+    """Map a 3D crystal system to a standard 2D in-plane k-path.
 
-    Examines the first two lattice vectors (in-plane for OPTIMADE MC2D)
-    and returns ``"square"``, ``"hexagonal"``, ``"rectangular"``, or
-    ``None`` (oblique / unknown).
+    Points are in **original** fractional coordinates
+    ``(label, k_a1, k_a2, k_vac=0)``.
     """
-    import numpy as np
-
-    a1 = np.array(original_structure.lattice.matrix[0])
-    a2 = np.array(original_structure.lattice.matrix[1])
-
-    len_a1 = np.linalg.norm(a1)
-    len_a2 = np.linalg.norm(a2)
-    if len_a1 < 1e-10 or len_a2 < 1e-10:
-        return None
-
-    cos_angle = np.dot(a1, a2) / (len_a1 * len_a2)
-    cos_angle = np.clip(cos_angle, -1.0, 1.0)
-    angle = np.degrees(np.arccos(cos_angle))
-    ratio = len_a1 / len_a2
-
-    ANGLE_TOL = 5.0
-    RATIO_TOL = 0.05
-
-    if abs(angle - 90) < ANGLE_TOL:
-        return "square" if abs(ratio - 1) < RATIO_TOL else "rectangular"
-    if abs(angle - 120) < ANGLE_TOL and abs(ratio - 1) < RATIO_TOL:
-        return "hexagonal"
-    return None
-
-
-def _inplane_kpath_2d(lattice_type):
-    """Standard 2D high-symmetry k-path ``(label, k_a1, k_a2, 0)``."""
     paths = {
-        "square": [
-            ("GAMMA", 0.0, 0.0, 0.0),
-            ("X", 0.5, 0.0, 0.0),
-            ("M", 0.5, 0.5, 0.0),
-            ("GAMMA", 0.0, 0.0, 0.0),
-        ],
-        "rectangular": [
-            ("GAMMA", 0.0, 0.0, 0.0),
-            ("X", 0.5, 0.0, 0.0),
-            ("S", 0.5, 0.5, 0.0),
-            ("Y", 0.0, 0.5, 0.0),
-            ("GAMMA", 0.0, 0.0, 0.0),
-        ],
         "hexagonal": [
             ("GAMMA", 0.0, 0.0, 0.0),
             ("M", 0.5, 0.0, 0.0),
             ("K", 1 / 3, 1 / 3, 0.0),
             ("GAMMA", 0.0, 0.0, 0.0),
         ],
+        "trigonal": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("M", 0.5, 0.0, 0.0),
+            ("K", 1 / 3, 1 / 3, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+        "orthorhombic": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("X", 0.5, 0.0, 0.0),
+            ("S", 0.5, 0.5, 0.0),
+            ("Y", 0.0, 0.5, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+        "tetragonal": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("X", 0.5, 0.0, 0.0),
+            ("M", 0.5, 0.5, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
+        "cubic": [
+            ("GAMMA", 0.0, 0.0, 0.0),
+            ("X", 0.5, 0.0, 0.0),
+            ("M", 0.5, 0.5, 0.0),
+            ("GAMMA", 0.0, 0.0, 0.0),
+        ],
     }
-    return paths[lattice_type]
+    return paths.get(crystal_system)
+
+
+def _reconstruct_inplane_path(kpath):
+    """Extract a continuous in-plane 2D path from pymatgen's 3D path.
+
+    1. Collect all points where k_vac (= k[2] for OPTIMADE) ≈ 0.
+    2. Sort them by polar angle in the (k_a1, k_a2) plane.
+    3. Build a round-trip: Γ → edge points in angular order → Γ.
+
+    Returns list of ``(label, k_a1, k_a2, 0)`` tuples, or ``[]`` if
+    fewer than 2 unique in-plane edge points exist.
+    """
+    import numpy as np
+
+    kpoints = kpath.kpath["kpoints"]
+    label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
+
+    # Collect unique in-plane points (k_vac ≈ 0).
+    inplane: dict[tuple[float, float], tuple[str, float, float]] = {}
+    for label, k in kpoints.items():
+        if abs(k[2]) > 1e-10:
+            continue
+        # Map label and round coords for dedup
+        key = (round(k[0], 10), round(k[1], 10))
+        mapped = label_map.get(label, label)
+        if key not in inplane:
+            inplane[key] = (mapped, k[0], k[1])
+
+    items = list(inplane.values())
+    # Separate Γ (origin) from edge points
+    gamma = None
+    edges: list[tuple[str, float, float]] = []
+    for label, k0, k1 in items:
+        if abs(k0) < 1e-10 and abs(k1) < 1e-10:
+            if gamma is None:
+                gamma = (label, 0.0, 0.0)
+        else:
+            edges.append((label, k0, k1))
+
+    if gamma is None:
+        return []
+
+    # Sort edge points by polar angle around Γ
+    edges.sort(key=lambda x: (np.arctan2(x[2], x[1]), x[1], x[2]))
+
+    # Build the path: Γ → edge points → Γ
+    result: list[tuple[str, float, float, float]] = [
+        (gamma[0], gamma[1], gamma[2], 0.0)
+    ]
+    seen = set()
+    for label, k0, k1 in edges:
+        key = (round(k0, 10), round(k1, 10))
+        if key not in seen:
+            seen.add(key)
+            result.append((label, k0, k1, 0.0))
+    result.append((gamma[0], gamma[1], gamma[2], 0.0))
+
+    return result
 
 
 def get_bandstructure_path(original_structure, special_points_override=None):
     """Generate CP2K ``SPECIAL_POINT`` lines for a rotated 2D structure.
 
-    For 2D materials the path is determined automatically from the
-    in-plane Bravais lattice (rectangular, square, hexagonal).  For
-    other cases it falls back to pymatgen's ``HighSymmKpath`` with
-    in-plane filtering.
+    The k-path is determined from the structure's **crystal system**
+    detected via ``SpacegroupAnalyzer`` (hexagonal, orthorhombic,
+    monoclinic, etc.), not from the bare lattice vectors.  This ensures
+    the path reflects the actual atomic symmetry — e.g. In₂Se₃ classed
+    as C2 (monoclinic) will **not** get a hexagonal path even if the
+    in-plane cell looks hexagonal.
 
     ``rotate_xy_to_xz`` maps:
         original b1 → rotated b1  (x, in-plane)
@@ -128,44 +172,42 @@ def get_bandstructure_path(original_structure, special_points_override=None):
     if special_points_override is not None:
         return special_points_override
 
-    # --- 2D Bravais lattice path -----------------------------------------
-    lattice_type = get_2d_bravais_lattice(original_structure)
-    if lattice_type is not None:
-        inplane = _inplane_kpath_2d(lattice_type)
+    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+    from pymatgen.symmetry.bandstructure import HighSymmKpath
+
+    sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
+    crystal_system = sga.get_crystal_system().lower()
+    sg_symbol = sga.get_space_group_symbol()
+    sg_number = sga.get_space_group_number()
+
+    std_path = _inplane_path_from_crystal_system(crystal_system)
+
+    if std_path is not None:
+        # For well-known crystal systems use the standard 2D path.
         # Map (k0, k1, k2) -> (k0, k2, k1) — put vacuum in y
+        return [
+            f"{label}  {k0:f}  {k2:f}  {k1:f}"
+            for label, k0, k1, k2 in std_path
+        ]
+
+    # --- fallback: pymatgen path → reconstructed 2D in-plane path --------
+    kpath = HighSymmKpath(original_structure)
+    inplane = _reconstruct_inplane_path(kpath)
+
+    if inplane:
         return [
             f"{label}  {k0:f}  {k2:f}  {k1:f}"
             for label, k0, k1, k2 in inplane
         ]
 
-    # --- Fallback: pymatgen HighSymmKpath with in-plane filtering --------
-    from pymatgen.symmetry.bandstructure import HighSymmKpath
-
-    kpath = HighSymmKpath(original_structure)
+    # Last resort: take the full 3D path as-is (should not normally reach here)
     kpoints = kpath.kpath["kpoints"]
     label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
-
-    # Collect contiguous in-plane blocks (k_vac = k[2] for OPTIMADE).
-    inplane_blocks: list[list[str]] = []
-    current_block: list[str] = []
+    target = []
     for segment in kpath.kpath["path"]:
         for label in segment:
-            if abs(kpoints[label][2]) < 1e-10:
-                current_block.append(label)
-            else:
-                if current_block:
-                    inplane_blocks.append(current_block)
-                    current_block = []
-        if current_block:
-            inplane_blocks.append(current_block)
-            current_block = []
-
-    if not inplane_blocks:
-        inplane_blocks = [[]]
-        for segment in kpath.kpath["path"]:
-            inplane_blocks[0].extend(segment)
-
-    target = max(inplane_blocks, key=len)
+            if label not in target:
+                target.append(label)
 
     return [
         f"{label_map.get(label, label)}  {kpoints[label][0]:f}  {kpoints[label][2]:f}  {kpoints[label][1]:f}"
