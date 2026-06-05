@@ -29,6 +29,8 @@ def fetch_mc2d_structures(
     page_limit: int = 100,
     max_structures: int | None = None,
     modifier: Callable[[Structure], Structure] | None = None,
+    max_atoms: int | None = None,
+    min_atoms: int | None = None,
 ) -> list[dict]:
     """
     Fetch structures from the MC2D OPTIMADE endpoint.
@@ -44,6 +46,10 @@ def fetch_mc2d_structures(
         Stop after this many structures.
     modifier
         Optional function applied to each pymatgen Structure.
+    max_atoms
+        Only include structures with at most this many atoms (nsites).
+    min_atoms
+        Only include structures with at least this many atoms (nsites).
 
     Returns
     -------
@@ -57,6 +63,7 @@ def fetch_mc2d_structures(
             "chemical_formula_descriptive",
             "elements",
             "nelements",
+            "nsites",
             "lattice_vectors",
             "cartesian_site_positions",
             "species_at_sites",
@@ -82,6 +89,13 @@ def fetch_mc2d_structures(
 
         for entry in data["data"]:
             attributes = entry["attributes"]
+            nsites = attributes.get("nsites")
+
+            if max_atoms is not None and (nsites is None or nsites > max_atoms):
+                continue
+            if min_atoms is not None and (nsites is None or nsites < min_atoms):
+                continue
+
             structure = optimade_entry_to_pymatgen(entry)
             original_structure = structure.copy()
 
@@ -95,6 +109,7 @@ def fetch_mc2d_structures(
                     "entry": entry,
                     "structure": structure,
                     "original_structure": original_structure,
+                    "nsites": nsites,
                 }
             )
 

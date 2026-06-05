@@ -246,6 +246,14 @@ def parse_args():
         help="OPTIMADE filter string (default: binary BN)",
     )
     parser.add_argument(
+        "--max-atoms", type=int, default=None,
+        help="Only process structures with at most this many atoms (nsites)",
+    )
+    parser.add_argument(
+        "--min-atoms", type=int, default=None,
+        help="Only process structures with at least this many atoms (nsites)",
+    )
+    parser.add_argument(
         "--elements", type=str, nargs="*",
         help="Only process structures whose elements are a subset of this set "
              "(e.g. --elements B C N). Affects both the OPTIMADE query and "
@@ -328,6 +336,8 @@ def main():
         optimade_filter=optimade_filter,
         max_structures=fetch_limit,
         modifier=modifier,
+        max_atoms=args.max_atoms,
+        min_atoms=args.min_atoms,
     )
 
     # Client-side post-filter to keep only structures whose elements

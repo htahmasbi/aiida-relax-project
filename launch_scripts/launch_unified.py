@@ -186,6 +186,8 @@ def launch_volume_scan(
     metadata_options: dict | None = None,
     continue_on_failure: bool = False,
     max_structures: int | None = None,
+    max_atoms: int | None = None,
+    min_atoms: int | None = None,
 ):
     """Launch a volume scan for structures in a group."""
     code = orm.load_code(f"{engine}@{code_label}")
@@ -200,6 +202,8 @@ def launch_volume_scan(
             optimade_filter='elements HAS ALL "B","N" AND nelements=2',
             max_structures=max_structures or 5,
             modifier=lambda s: rotate_xy_to_xz(make_supercell_3x3(s), vacuum=20.0),
+            max_atoms=max_atoms,
+            min_atoms=min_atoms,
         )
 
         for item in structures:
@@ -316,7 +320,14 @@ def main():
         type=int,
         help="Maximum number of structures to fetch for volume scan",
     )
-
+    parser.add_argument(
+        "--max-atoms", type=int, default=None,
+        help="Only process structures with at most this many atoms (nsites)",
+    )
+    parser.add_argument(
+        "--min-atoms", type=int, default=None,
+        help="Only process structures with at least this many atoms (nsites)",
+    )
     parser.add_argument(
         "--show-config",
         action="store_true",
@@ -392,6 +403,8 @@ def main():
             metadata_options=metadata_options,
             continue_on_failure=args.continue_on_failure or config.volume_scan.continue_on_failure,
             max_structures=args.max_structures or config.volume_scan.max_structures,
+            max_atoms=args.max_atoms,
+            min_atoms=args.min_atoms,
         )
 
     print("\nDone!")

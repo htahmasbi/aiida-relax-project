@@ -312,6 +312,8 @@ def fetch_structures_from_optimade(
     elements: list[str] | None = None,
     max_structures: int = 5,
     modifier: callable | None = None,
+    max_atoms: int | None = None,
+    min_atoms: int | None = None,
 ) -> orm.Group:
     """Fetch structures from OPTIMADE and add to a group.
 
@@ -320,6 +322,8 @@ def fetch_structures_from_optimade(
         elements: Required elements (e.g., ["B", "N"])
         max_structures: Maximum number of structures to fetch
         modifier: Optional function to modify fetched structures
+        max_atoms: Only include structures with at most this many atoms
+        min_atoms: Only include structures with at least this many atoms
 
     Returns:
         The group with added structures
@@ -359,6 +363,8 @@ def fetch_structures_from_optimade(
             optimade_filter=filter_str,
             max_structures=max_structures,
             modifier=modifier,
+            max_atoms=max_atoms,
+            min_atoms=min_atoms,
         )
 
         for item in structures:
