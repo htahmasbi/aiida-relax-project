@@ -120,7 +120,13 @@ ri_basis_accuracy_target = 1e-5
 # The actual mesh is computed as mesh_i = max(1, round(density / supercell_i)).
 # For supercell [3,3,1], density=36 gives [12, 1, 12].
 # Set kpoints_mesh / kpoints_w explicitly below to override.
+
 kpoint_density = 36
+
+# K-point meshes
+#kpoints_mesh = [12, 1, 12]
+#kpoints_w = [12, 1, 12]
+
 
 # Cutoffs and tolerances
 cutoff = 400
