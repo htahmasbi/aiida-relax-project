@@ -107,7 +107,7 @@ def fetch_mc2d_structures(
             if sg_opt is None:
                 try:
                     from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-                    sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
+                    sga = SpacegroupAnalyzer(original_structure, symprec=0.05)
                     sg_opt = sga.get_space_group_symbol()
                     sg_num_opt = sga.get_space_group_number()
                 except Exception:
