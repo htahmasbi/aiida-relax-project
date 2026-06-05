@@ -76,8 +76,13 @@ def rotate_xy_to_xz(structure: Structure, vacuum: float = 20.0) -> Structure:
     return result
 
 
-def make_supercell_3x3(structure: Structure) -> Structure:
-    """Return a 3x3x1 supercell."""
+def make_supercell(structure: Structure, scaling: list[int]) -> Structure:
+    """Return a supercell scaled by *scaling* (e.g. ``[3, 3, 1]``)."""
     structure = structure.copy()
-    structure.make_supercell([3, 3, 1])
+    structure.make_supercell(scaling)
     return structure
+
+
+def make_supercell_3x3(structure: Structure) -> Structure:
+    """Return a 3×3×1 supercell (convenience wrapper)."""
+    return make_supercell(structure, [3, 3, 1])

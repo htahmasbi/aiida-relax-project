@@ -22,22 +22,65 @@ import argparse
 from aiida_relax_project.core.config import get_config
 
 
-def make_modifier(vacuum: float = 20.0):
-    """Return a modifier that builds a 3×3 supercell then rotates to xz-plane."""
+def make_modifier(vacuum: float = 20.0, supercell: list[int] | None = None):
+    """Return a modifier that builds a supercell then rotates to xz-plane.
+
+    Args:
+        vacuum: Vacuum gap (A) along y after rotation.
+        supercell: Scaling factors e.g. ``[3, 3, 1]``.  Defaults to ``[3, 3, 1]``.
+    """
+    if supercell is None:
+        supercell = [3, 3, 1]
     from aiida_relax_project.transformations.structures import (
         center_slab_in_cell,
-        make_supercell_3x3,
+        make_supercell,
         rotate_xy_to_xz,
     )
     def modifier(structure):
         structure = center_slab_in_cell(structure)
-        structure = make_supercell_3x3(structure)
+        structure = make_supercell(structure, supercell)
         structure = rotate_xy_to_xz(structure, vacuum=vacuum)
         return structure
     return modifier
 
 
-def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
+def get_bandstructure_path(structure, special_points_override=None):
+    """Generate CP2K ``SPECIAL_POINT`` lines from a pymatgen Structure.
+
+    Uses pymatgen's ``HighSymmKpath`` to determine the high-symmetry
+    k-point path for the structure's space group.
+
+    Args:
+        structure: Pymatgen ``Structure`` object.
+        special_points_override: Optional manual list of CP2K ``SPECIAL_POINT``
+            lines (e.g. ``["GAMMA  0.0  0.0  0.0", ...]``).  When provided,
+            the override is returned as-is.
+
+    Returns:
+        List of strings, each formatted as ``"LABEL  x  y  z"``.
+    """
+    if special_points_override is not None:
+        return special_points_override
+
+    from pymatgen.symmetry.bandstructure import HighSymmKpath
+
+    kpath = HighSymmKpath(structure)
+    kpoints = kpath.kpath["kpoints"]
+
+    label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
+
+    special_points = []
+    for segment in kpath.kpath["path"]:
+        for label in segment:
+            mapped_label = label_map.get(label, label)
+            coord = kpoints[label]
+            special_points.append(
+                f"{mapped_label}  {coord[0]:f}  {coord[1]:f}  {coord[2]:f}"
+            )
+    return special_points
+
+
+def make_gw_parameters(gw, structure, scf_guess="ATOMIC", original_structure=None):
     """Build the full CP2K input dict for a GW + bandstructure run.
 
     KIND sections are generated dynamically from the unique elements
@@ -138,7 +181,9 @@ def make_gw_parameters(gw, structure, scf_guess="ATOMIC"):
                     "BANDSTRUCTURE_PATH": {
                         "NPOINTS": gw.bs_npoints,
                         "UNITS": "B_VECTOR",
-                        "SPECIAL_POINT": list(gw.special_points),
+                        "SPECIAL_POINT": get_bandstructure_path(
+                            original_structure or structure, gw.special_points
+                        ),
                     },
                 },
             },
@@ -243,7 +288,7 @@ def main():
     fetch_limit = (
         args.max_structures * 10 if args.elements else args.max_structures
     )
-    modifier = make_modifier(gw.vacuum)
+    modifier = make_modifier(gw.vacuum, gw.supercell)
     data = fetch_mc2d_structures(
         optimade_filter=optimade_filter,
         max_structures=fetch_limit,
@@ -268,7 +313,14 @@ def main():
     for item in data:
         pymatgen_structure = item["structure"]
 
-        parameters = Dict(make_gw_parameters(gw, pymatgen_structure, scf_guess=args.scf_guess))
+        original_structure = item.get("original_structure")
+        parameters = Dict(
+            make_gw_parameters(
+                gw, pymatgen_structure,
+                scf_guess=args.scf_guess,
+                original_structure=original_structure,
+            )
+        )
 
         structure = StructureData(pymatgen=pymatgen_structure)
         structure.label = f"MC2D GW {item['formula']} {item['id']} xz 3x3"

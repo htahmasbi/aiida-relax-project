@@ -135,6 +135,9 @@ poisson_solver = "WAVELET"
 # Vacuum gap (A) along the non-periodic direction after rotation
 vacuum = 20.0
 
+# Supercell scaling for the in-plane directions (e.g. [3, 3, 1], [2, 2, 1], etc.)
+supercell = [3, 3, 1]
+
 # SCF mixing
 mixing_alpha = 0.2
 mixing_beta = 0.8
@@ -169,14 +172,18 @@ orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
 # directly from the three file paths (files must be locally accessible):
 auto_resolve = true
 
-# Bandstructure path (hexagonal BN: GAMMA-M-K-GAMMA)
+# Number of k-points per bandstructure segment
 bs_npoints = 20
-special_points = [
-    "GAMMA  0.0  0.0  0.0",
-    "M      0.5  0.0  0.0",
-    "K      0.3333  0.0  0.3333",
-    "GAMMA  0.0  0.0  0.0",
-]
+
+# Bandstructure path is auto-computed from the structure's space group
+# via pymatgen's HighSymmKpath.  To override for a specific material,
+# uncomment and set special_points below:
+# special_points = [
+#     "GAMMA  0.0  0.0  0.0",
+#     "M      0.5  0.0  0.0",
+#     "K      0.3333  0.0  0.3333",
+#     "GAMMA  0.0  0.0  0.0",
+# ]
 
 # =============================================================================
 # Volume Scan Settings

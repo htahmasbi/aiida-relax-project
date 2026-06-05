@@ -171,6 +171,7 @@ class GwConfig(BaseModel):
     orb_basis: str = Field(default="aug-SZV-MOLOPT-GTH-tier-1")
     vacuum: float = Field(default=20.0, ge=5.0,
                           description="Vacuum gap (A) along y after rotation.")
+    supercell: list[int] = Field(default_factory=lambda: [3, 3, 1])
     element_settings: dict[str, ElementGwConfig] = Field(default_factory=lambda: {
         "B": ElementGwConfig(
             ri_basis="RI_aug-SZV-MOLOPT-GTH-tier-1_N_RI_009_s_p_d_f_g_h_i_3_2_0_0_0_0_0_error_1.1e-06",
@@ -182,12 +183,12 @@ class GwConfig(BaseModel):
         ),
     })
     bs_npoints: int = Field(default=20, ge=1)
-    special_points: list[str] = Field(default_factory=lambda: [
-        "GAMMA  0.0  0.0  0.0",
-        "M      0.5  0.0  0.0",
-        "K      0.3333  0.0  0.3333",
-        "GAMMA  0.0  0.0  0.0",
-    ])
+    special_points: list[str] | None = Field(
+        default=None,
+        description="Optional override for the bandstructure k-point path. "
+        "When set to None (default), the path is auto-computed from the "
+        "structure's space group via pymatgen's HighSymmKpath.",
+    )
 
     def resolve_elements(self, elements: set[str]) -> dict[str, ElementGwConfig]:
         """Auto-resolve per-element settings from the configured files.

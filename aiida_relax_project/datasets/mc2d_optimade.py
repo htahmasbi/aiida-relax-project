@@ -83,6 +83,7 @@ def fetch_mc2d_structures(
         for entry in data["data"]:
             attributes = entry["attributes"]
             structure = optimade_entry_to_pymatgen(entry)
+            original_structure = structure.copy()
 
             if modifier is not None:
                 structure = modifier(structure)
@@ -93,6 +94,7 @@ def fetch_mc2d_structures(
                     "formula": attributes.get("chemical_formula_reduced"),
                     "entry": entry,
                     "structure": structure,
+                    "original_structure": original_structure,
                 }
             )
 
