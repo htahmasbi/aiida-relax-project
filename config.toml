@@ -165,7 +165,7 @@ orb_basis = "aug-SZV-MOLOPT-GTH-tier-1"
 # ri_basis = "RI_..."
 # potential = "GTH-PBE-q6"
 
-# Alternatively, set auto_resolve = true to read element→name mappings
+# Alternatively, set auto_resolve = true to read element name mappings
 # directly from the three file paths (files must be locally accessible):
 auto_resolve = true
 

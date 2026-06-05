@@ -54,7 +54,7 @@ aiida-relax-project/
 ├── launch_scripts/
 │   ├── launch_single_point.py            # Standalone VASP launch script
 │   ├── launch_unified.py                 # Unified argparse launcher
-│   └── launch_mc2d_cp2k.py              # MC2D CP2K batch launcher
+│   └── launch_mc2d_cp2k.py               # MC2D CP2K batch launcher
 ├── examples/
 │   └── setup_cluster.sh                  # Cluster setup template
 ├── data_generation/
@@ -78,8 +78,12 @@ conda create -n aiida-env python=3.11
 conda activate aiida-env
 pip install aiida-core aiida-vasp aiida-cp2k ase
 pip install -e .
+# Modify and run the setup script to automatically configure the environment and cluster settings:
+bash examples/setup_cluster.sh
+# or alternatively, set up your profile and start the background services manually:
 verdi quicksetup
 verdi daemon start
+verdi status
 ```
 
 ## Quick Start
