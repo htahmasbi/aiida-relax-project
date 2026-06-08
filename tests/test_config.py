@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 import tomli_w
-
 from pymatgen.core import Lattice, Structure
 
 from aiida_relax_project.core.config import (
