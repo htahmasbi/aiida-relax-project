@@ -3,7 +3,10 @@ from __future__ import annotations
 import pytest
 from pymatgen.core import Lattice, Structure
 
-from launch_scripts.launch_mc2d_gw import get_bandstructure_path
+from launch_scripts.launch_mc2d_gw import (
+    _classify_2d_inplane_lattice,
+    get_bandstructure_path,
+)
 
 
 def _hexagonal_bn() -> Structure:
@@ -103,8 +106,6 @@ class TestGetBandstructurePath:
         """In₂Se₃-like rectangular cell gives Γ→X→S→Y→Γ instead of
         pymatgen's monoclinic 3D path."""
         # Original (pre-rotation) InSe: a=7.941, b=5.731, vacuum=20 in z.
-        # Atomic positions do not matter — only the in-plane lattice vectors
-        # are used for 2D Bravais lattice detection.
         lattice = Lattice.orthorhombic(7.94104, 5.73095, 20.0)
         structure = Structure(lattice, ["H"], [[0, 0, 0]], coords_are_cartesian=False)
         path = get_bandstructure_path(structure)
@@ -115,3 +116,86 @@ class TestGetBandstructurePath:
         assert float(s_parts[1]) == 0.5
         assert float(s_parts[2]) == 0.0
         assert float(s_parts[3]) == 0.5
+
+
+class TestClassify2DInplane:
+    """2D Bravais lattice classification from in-plane vectors."""
+
+    def test_hexagonal_120(self):
+        s = Structure(Lattice.hexagonal(2.5, 10.0), ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "hexagonal"
+
+    def test_hexagonal_60(self):
+        s = Structure(Lattice.from_parameters(3.0, 3.0, 15.0, 90, 90, 60),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "hexagonal"
+
+    def test_square(self):
+        s = Structure(Lattice.orthorhombic(3.0, 3.0, 15.0), ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "square"
+
+    def test_rectangular(self):
+        s = Structure(Lattice.orthorhombic(3.0, 5.0, 15.0), ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "rectangular"
+
+    def test_oblique(self):
+        s = Structure(Lattice.from_parameters(3.0, 5.0, 15.0, 90, 90, 75),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "oblique"
+
+    def test_monoclinic_sg3_like(self):
+        """SG 3 (P2) 2D material — oblique in-plane."""
+        s = Structure(Lattice.from_parameters(3.5, 5.2, 18.0, 90, 90, 105),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "oblique"
+
+    def test_triclinic_like(self):
+        s = Structure(Lattice.from_parameters(4.0, 6.0, 18.0, 90, 90, 70),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "oblique"
+
+    def test_near_hexagonal(self):
+        s = Structure(Lattice.from_parameters(3.0, 3.0, 15.0, 90, 90, 118),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "hexagonal"
+
+    def test_near_rectangular(self):
+        s = Structure(Lattice.from_parameters(3.0, 5.0, 15.0, 90, 90, 85),
+                       ["H"], [[0, 0, 0]])
+        assert _classify_2d_inplane_lattice(s) == "rectangular"
+
+
+class TestBravaisEndToEnd:
+    """End-to-end path generation for every 2D Bravais lattice type."""
+
+    def _check(self, path):
+        assert len(path) >= 3
+        assert path[0].startswith("GAMMA")
+        assert path[-1].startswith("GAMMA")
+        for sp in path:
+            p = sp.split()
+            assert len(p) == 4
+            assert float(p[2]) == pytest.approx(0.0, abs=1e-10)
+
+    def test_hexagonal(self):
+        self._check(get_bandstructure_path(
+            Structure(Lattice.hexagonal(2.5, 10.0), ["H"], [[0, 0, 0]])))
+
+    def test_square(self):
+        self._check(get_bandstructure_path(
+            Structure(Lattice.orthorhombic(3.0, 3.0, 15.0), ["H"], [[0, 0, 0]])))
+
+    def test_rectangular(self):
+        self._check(get_bandstructure_path(
+            Structure(Lattice.orthorhombic(3.0, 5.0, 15.0), ["H"], [[0, 0, 0]])))
+
+    def test_oblique(self):
+        self._check(get_bandstructure_path(
+            Structure(Lattice.from_parameters(3.0, 5.0, 15.0, 90, 90, 75),
+                       ["H"], [[0, 0, 0]])))
+
+    def test_monoclinic_sg3(self):
+        """SG 3 (P2) 2D material produces a valid path."""
+        self._check(get_bandstructure_path(
+            Structure(Lattice.from_parameters(3.5, 5.2, 18.0, 90, 90, 105),
+                       ["H"], [[0, 0, 0]])))

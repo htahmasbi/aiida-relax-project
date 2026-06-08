@@ -44,11 +44,94 @@ def make_modifier(vacuum: float = 20.0, supercell: list[int] | None = None):
     return modifier
 
 
+def _classify_2d_inplane_lattice(structure, angle_tol=15.0, ratio_tol=0.15):
+    """Classify the 2D Bravais lattice from the in-plane lattice vectors.
+
+    Examines the first two lattice vectors of *structure* and returns one of:
+    ``'hexagonal'``, ``'square'``, ``'rectangular'``, or ``'oblique'``.
+
+    Parameters
+    ----------
+    structure
+        Pymatgen ``Structure`` (original, pre-rotation — vacuum along z).
+    angle_tol
+        Tolerance (degrees) for γ ≈ 120° or γ ≈ 90°.
+    ratio_tol
+        Tolerance for ``min(a,b) / max(a,b) ≈ 1``.
+
+    Returns
+    -------
+    str
+        2D Bravais lattice type.
+    """
+    import math
+
+    import numpy as np
+
+    matrix = structure.lattice.matrix
+    a_vec = matrix[0]
+    b_vec = matrix[1]
+
+    a_len = float(np.linalg.norm(a_vec))
+    b_len = float(np.linalg.norm(b_vec))
+
+    cos_gamma = np.dot(a_vec, b_vec) / (a_len * b_len)
+    cos_gamma = max(-1.0, min(1.0, cos_gamma))
+    gamma = math.degrees(math.acos(cos_gamma))
+
+    ratio = min(a_len, b_len) / max(a_len, b_len)
+
+    if (abs(gamma - 120) < angle_tol or abs(gamma - 60) < angle_tol) and (1.0 - ratio) < ratio_tol:
+        return "hexagonal"
+
+    if abs(gamma - 90) < angle_tol and (1.0 - ratio) < ratio_tol:
+        return "square"
+
+    if abs(gamma - 90) < angle_tol:
+        return "rectangular"
+
+    return "oblique"
+
+
+_2D_BRAVAIS_PATHS: dict[str, list[tuple[str, float, float, float]]] = {
+    "hexagonal": [
+        ("GAMMA", 0.0, 0.0, 0.0),
+        ("M", 0.5, 0.0, 0.0),
+        ("K", 1 / 3, 1 / 3, 0.0),
+        ("GAMMA", 0.0, 0.0, 0.0),
+    ],
+    "square": [
+        ("GAMMA", 0.0, 0.0, 0.0),
+        ("X", 0.5, 0.0, 0.0),
+        ("M", 0.5, 0.5, 0.0),
+        ("GAMMA", 0.0, 0.0, 0.0),
+    ],
+    "rectangular": [
+        ("GAMMA", 0.0, 0.0, 0.0),
+        ("X", 0.5, 0.0, 0.0),
+        ("S", 0.5, 0.5, 0.0),
+        ("Y", 0.0, 0.5, 0.0),
+        ("GAMMA", 0.0, 0.0, 0.0),
+    ],
+    "oblique": [
+        ("GAMMA", 0.0, 0.0, 0.0),
+        ("X", 0.5, 0.0, 0.0),
+        ("M", 0.5, 0.5, 0.0),
+        ("Y", 0.0, 0.5, 0.0),
+        ("GAMMA", 0.0, 0.0, 0.0),
+    ],
+}
+
+
 def _inplane_path_from_crystal_system(crystal_system):
     """Map a 3D crystal system to a standard 2D in-plane k-path.
 
     Points are in **original** fractional coordinates
     ``(label, k_a1, k_a2, k_vac=0)``.
+
+    .. deprecated::
+        Prefer :func:`_classify_2d_inplane_lattice` which determines the
+        2D Bravais lattice directly from the in-plane lattice vectors.
     """
     paths = {
         "hexagonal": [
@@ -147,12 +230,10 @@ def _reconstruct_inplane_path(kpath):
 def get_bandstructure_path(original_structure, special_points_override=None):
     """Generate CP2K ``SPECIAL_POINT`` lines for a rotated 2D structure.
 
-    The k-path is determined from the structure's **crystal system**
-    detected via ``SpacegroupAnalyzer`` (hexagonal, orthorhombic,
-    monoclinic, etc.), not from the bare lattice vectors.  This ensures
-    the path reflects the actual atomic symmetry — e.g. In₂Se₃ classed
-    as C2 (monoclinic) will **not** get a hexagonal path even if the
-    in-plane cell looks hexagonal.
+    The k-path is determined from the **2D Bravais lattice** of the
+    in-plane lattice vectors, so it works for *any* 2D material
+    regardless of its 3D space group classification (monoclinic,
+    triclinic, etc.).
 
     ``rotate_xy_to_xz`` maps:
         original b1 → rotated b1  (x, in-plane)
@@ -172,23 +253,30 @@ def get_bandstructure_path(original_structure, special_points_override=None):
     if special_points_override is not None:
         return special_points_override
 
-    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-    from pymatgen.symmetry.bandstructure import HighSymmKpath
-
-    sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
-    crystal_system = sga.get_crystal_system().lower()
-
-    std_path = _inplane_path_from_crystal_system(crystal_system)
+    # --- Step 1: 2D Bravais lattice from in-plane vectors ----------------
+    bravais = _classify_2d_inplane_lattice(original_structure)
+    std_path = _2D_BRAVAIS_PATHS.get(bravais)
 
     if std_path is not None:
-        # For well-known crystal systems use the standard 2D path.
-        # Map (k0, k1, k2) -> (k0, k2, k1) — put vacuum in y
         return [
             f"{label}  {k0:f}  {k2:f}  {k1:f}"
             for label, k0, k1, k2 in std_path
         ]
 
-    # --- fallback: pymatgen path → reconstructed 2D in-plane path --------
+    # --- Step 2: fallback to 3D crystal system (backward compat) --------
+    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+    sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
+    crystal_system = sga.get_crystal_system().lower()
+    std_path = _inplane_path_from_crystal_system(crystal_system)
+
+    if std_path is not None:
+        return [
+            f"{label}  {k0:f}  {k2:f}  {k1:f}"
+            for label, k0, k1, k2 in std_path
+        ]
+
+    # --- Step 3: pymatgen path → reconstructed 2D in-plane path ---------
+    from pymatgen.symmetry.bandstructure import HighSymmKpath
     kpath = HighSymmKpath(original_structure)
     inplane = _reconstruct_inplane_path(kpath)
 
@@ -198,7 +286,7 @@ def get_bandstructure_path(original_structure, special_points_override=None):
             for label, k0, k1, k2 in inplane
         ]
 
-    # Last resort: take the full 3D path as-is (should not normally reach here)
+    # --- Step 4: last resort — take the full 3D path as-is -------------
     kpoints = kpath.kpath["kpoints"]
     label_map = {"\\Gamma": "GAMMA", "Gamma": "GAMMA"}
     target = []
