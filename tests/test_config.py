@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 import tomli_w
 
+from pymatgen.core import Lattice, Structure
+
 from aiida_relax_project.core.config import (
     Cp2kConfig,
     GwConfig,
@@ -14,6 +16,18 @@ from aiida_relax_project.core.config import (
     _merge_configs,
     load_config,
 )
+
+
+def _bn_cell(supercell):
+    """Create a rotated BN supercell for testing (vacuum along Y).
+
+    supercell = [sx, sz, sy] — matches the config convention:
+    index 0 = X-periodic, index 1 = Z-periodic, index 2 = vacuum Y.
+    """
+    a = 2.512 * supercell[0]
+    c = 2.512 * supercell[1]  # supercell[1] is Z-periodic multiplier
+    lattice = Lattice.from_parameters(a, 20.0, c, 90, 90, 90)
+    return Structure(lattice, ["B", "N"], [[0, 0, 0], [0.5, 0, 0.5]])
 
 
 class TestMergeConfigs:
@@ -126,11 +140,12 @@ class TestGwConfig:
     """Test GW-specific configuration."""
 
     def test_defaults(self):
+        s = _bn_cell([3, 3, 1])
         cfg = GwConfig()
         assert cfg.auto_resolve is False
         assert cfg.kpoints_mesh is None
-        assert cfg.get_kpoints_mesh() == [12, 1, 12]
-        assert cfg.get_kpoints_w() == [12, 1, 12]
+        assert cfg.get_kpoints_mesh(s) == [12, 1, 12]
+        assert cfg.get_kpoints_w(s) == [12, 1, 12]
         assert cfg.cutoff == 400
         assert cfg.periodic == "XZ"
         assert cfg.poisson_solver == "WAVELET"
@@ -140,20 +155,24 @@ class TestGwConfig:
         assert cfg.element_settings["B"].ri_basis.startswith("RI_")
         assert cfg.element_settings["N"].potential == "GTH-PBE-q5"
 
-    def test_kpoint_density_computation(self):
-        cfg = GwConfig(supercell=[2, 2, 1], kpoint_density=36)
-        assert cfg.get_kpoints_mesh() == [18, 1, 18]
+    def test_kspacing_computation(self):
+        s2 = _bn_cell([2, 2, 1])
+        cfg = GwConfig(kspacing=0.07)
+        assert cfg.get_kpoints_mesh(s2) == [18, 1, 18]
 
-        cfg2 = GwConfig(supercell=[4, 4, 1], kpoint_density=36)
-        assert cfg2.get_kpoints_mesh() == [9, 1, 9]
+        s4 = _bn_cell([4, 4, 1])
+        cfg2 = GwConfig(kspacing=0.07)
+        assert cfg2.get_kpoints_mesh(s4) == [9, 1, 9]
 
-        cfg3 = GwConfig(supercell=[3, 3, 1], kpoint_density=24)
-        assert cfg3.get_kpoints_mesh() == [8, 1, 8]
+        s3 = _bn_cell([3, 3, 1])
+        cfg3 = GwConfig(kspacing=0.1)
+        assert cfg3.get_kpoints_mesh(s3) == [8, 1, 8]
 
     def test_kpoint_mesh_override(self):
+        s = _bn_cell([3, 3, 1])
         cfg = GwConfig(kpoints_mesh=[6, 1, 6])
-        assert cfg.get_kpoints_mesh() == [6, 1, 6]
-        assert cfg.get_kpoints_w() == [12, 1, 12]  # kpoints_w still auto
+        assert cfg.get_kpoints_mesh(s) == [6, 1, 6]
+        assert cfg.get_kpoints_w(s) == [12, 1, 12]  # kpoints_w still auto from kspacing
 
     def test_auto_resolve_flag(self):
         cfg = GwConfig(auto_resolve=True)

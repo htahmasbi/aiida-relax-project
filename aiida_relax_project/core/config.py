@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 from pathlib import Path
 from typing import Any, Literal
@@ -144,22 +145,28 @@ class GwConfig(BaseModel):
     basis_set_file: str = Field(default="BASIS_AUG_MOLOPT")
     ri_basis_set_file: str = Field(default="BASIS_RI_AUG_MOLOPT")
     potential_file: str = Field(default="POTENTIAL_AUG")
-    kpoint_density: int = Field(
-        default=36, ge=1,
-        description="Effective k-point density per primitive lattice vector. "
-                    "The actual mesh is computed as "
-                    "mesh_i = max(1, round(density / supercell_i)). "
-                    "For BN 3x3 supercell, density=36 gives [12, 1, 12].",
+    kspacing: float = Field(
+        default=0.07, gt=0,
+        description="K-point spacing in Å⁻¹ (VASP KSPACING convention). "
+                    "The mesh is computed as "
+                    "N_i = max(1, round(2π / (|a_i| × kspacing))) "
+                    "for periodic directions, N=1 for the vacuum axis. "
+                    "kspacing=0.07 gives [12, 1, 12] for a 3×3 BN supercell.",
+    )
+    kspacing_w: float | None = Field(
+        default=None,
+        description="K-point spacing for the GW k-point mesh (KPOINTS_W). "
+                    "If None, uses the same value as kspacing.",
     )
     kpoints_mesh: list[int] | None = Field(
         default=None,
         description="K-point mesh override. If None, auto-computed from "
-                    "kpoint_density and supercell.",
+                    "kspacing and the structure lattice vectors.",
     )
     kpoints_w: list[int] | None = Field(
         default=None,
         description="GW k-point mesh override (KPOINTS_W). If None, "
-                    "auto-computed from kpoint_density and supercell.",
+                    "auto-computed from kspacing_w and the structure lattice vectors.",
     )
     periodic: str = Field(default="XZ")
     poisson_solver: str = Field(default="WAVELET")
@@ -248,25 +255,29 @@ class GwConfig(BaseModel):
 
         return result
 
-    def get_kpoints_mesh(self) -> list[int]:
+    def get_kpoints_mesh(self, structure) -> list[int]:
         """Return the SCF k-point mesh, auto-computed if not overridden."""
         if self.kpoints_mesh is not None:
             return self.kpoints_mesh
-        return self._compute_kpoint_mesh()
+        return self._compute_from_kspacing(structure, self.kspacing)
 
-    def get_kpoints_w(self) -> list[int]:
+    def get_kpoints_w(self, structure) -> list[int]:
         """Return the GW KPOINTS_W mesh, auto-computed if not overridden."""
         if self.kpoints_w is not None:
             return self.kpoints_w
-        return self._compute_kpoint_mesh()
+        kspacing_w = self.kspacing_w if self.kspacing_w is not None else self.kspacing
+        return self._compute_from_kspacing(structure, kspacing_w)
 
-    def _compute_kpoint_mesh(self) -> list[int]:
-        sx, sy, _ = self.supercell
-        return [
-            max(1, round(self.kpoint_density / sx)),
-            1,
-            max(1, round(self.kpoint_density / sy)),
-        ]
+    def _compute_from_kspacing(self, structure, kspacing: float) -> list[int]:
+        lengths = structure.lattice.abc
+        result: list[int] = []
+        for i, ax in enumerate("XYZ"):
+            if ax in self.periodic.upper():
+                n = max(1, round(2 * math.pi / (lengths[i] * kspacing)))
+                result.append(n)
+            else:
+                result.append(1)
+        return result
 
 
 class ProjectConfig(BaseSettings):

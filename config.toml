@@ -116,12 +116,13 @@ potential_file = "/path/to/POTENTIAL_UZH"
 # When set, auto_resolve picks the best RI basis not exceeding this value.
 ri_basis_accuracy_target = 1e-5
 
-# K-point density (effective k-points per primitive lattice vector).
-# The actual mesh is computed as mesh_i = max(1, round(density / supercell_i)).
-# For supercell [3,3,1], density=36 gives [12, 1, 12].
+# K-point spacing (VASP KSPACING convention, Å⁻¹).
+# The mesh is computed as N_i = max(1, round(2π / (|a_i| × kspacing)))
+# for periodic directions; N=1 for the vacuum axis.
+# kspacing=0.07 gives [12, 1, 12] for a 3×3 BN supercell.
 # Set kpoints_mesh / kpoints_w explicitly below to override.
 
-kpoint_density = 36
+kspacing = 0.07
 
 # K-point meshes
 #kpoints_mesh = [12, 1, 12]
