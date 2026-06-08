@@ -177,8 +177,6 @@ def get_bandstructure_path(original_structure, special_points_override=None):
 
     sga = SpacegroupAnalyzer(original_structure, symprec=0.01)
     crystal_system = sga.get_crystal_system().lower()
-    sg_symbol = sga.get_space_group_symbol()
-    sg_number = sga.get_space_group_number()
 
     std_path = _inplane_path_from_crystal_system(crystal_system)
 
