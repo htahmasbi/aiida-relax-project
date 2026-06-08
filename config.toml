@@ -107,10 +107,10 @@ default_force_tolerance = 0.01
 # =============================================================================
 
 [gw]
-# Paths on the cluster for augmented basis sets and potentials
-basis_set_file = "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
-ri_basis_set_file = "/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI"
-potential_file = "/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
+# Paths to augmented basis sets and potentials (update for your system)
+basis_set_file = "/path/to/BASIS_GTH_MOLOPT_AUG_for_excited_states"
+ri_basis_set_file = "/path/to/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI"
+potential_file = "/path/to/POTENTIAL_UZH"
 
 # Target relative accuracy for RI basis selection (e.g. 1e-5, 1e-6).
 # When set, auto_resolve picks the best RI basis not exceeding this value.

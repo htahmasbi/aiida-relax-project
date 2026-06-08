@@ -26,16 +26,6 @@ class CalculationMode(str, Enum):
         return self.value
 
 
-class ConvergenceStatus(str, Enum):
-    """Status of a calculation or workflow."""
-
-    PENDING = "pending"
-    RUNNING = "running"
-    OK = "ok"
-    FAILED = "failed"
-    UNCONVERGED = "unconverged"
-
-
 # Resource presets for different HPC systems
 RESOURCE_PRESETS: dict[str, dict] = {
     "default": {

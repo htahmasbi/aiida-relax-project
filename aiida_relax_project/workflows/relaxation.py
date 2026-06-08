@@ -263,7 +263,7 @@ class DynamicRelaxWorkChain(WorkChain):
     def inspect_relax(self):
         """Check relaxation status."""
         relax = self.ctx.relax
-        engine = self.ctx.engine.value.upper()
+        engine = self.ctx.engine.upper()
 
         if not relax.is_finished_ok:
             logger.error(
@@ -285,4 +285,4 @@ class DynamicRelaxWorkChain(WorkChain):
         if "misc" in relax.outputs:
             self.out("misc", relax.outputs.misc)
 
-        self.out("engine_used", orm.Str(self.ctx.engine.value))
+        self.out("engine_used", orm.Str(self.ctx.engine))

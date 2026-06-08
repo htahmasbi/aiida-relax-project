@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import sys
-from contextlib import contextmanager
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -64,20 +63,3 @@ def get_logger(name: str) -> logging.Logger:
     """
     return logging.getLogger(f"aiida_relax_project.{name}")
 
-
-@contextmanager
-def log_section(logger: logging.Logger, title: str, level: int = logging.INFO):
-    """Log a section with visual separator.
-
-    Usage:
-        with log_section(logger, "Running calculations"):
-            # code here
-    """
-    separator = "=" * 60
-    logger.log(level, separator)
-    logger.log(level, title.center(60))
-    logger.log(level, separator)
-    try:
-        yield
-    finally:
-        logger.log(level, "=" * 60)

@@ -5,7 +5,6 @@ import pytest
 from aiida_relax_project.core.enums import (
     RESOURCE_PRESETS,
     CalculationMode,
-    ConvergenceStatus,
     RelaxType,
 )
 from aiida_relax_project.core.exceptions import (
@@ -29,10 +28,6 @@ class TestEnums:
         assert CalculationMode.SINGLE_POINT == "single-point"
         assert CalculationMode.RELAX == "relax"
         assert CalculationMode.VOLUME_SCAN == "volume-scan"
-
-    def test_convergence_status_values(self):
-        assert ConvergenceStatus.OK == "ok"
-        assert ConvergenceStatus.FAILED == "failed"
 
     def test_resource_presets_defined(self):
         assert "default" in RESOURCE_PRESETS

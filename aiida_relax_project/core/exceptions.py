@@ -58,39 +58,6 @@ class WorkflowExecutionError(AiidaRelaxError):
         if exit_code:
             detail_parts.append(f"exit_code={exit_code}")
         if engine:
-            detail_parts.append(f"engine={engine.value}")
+            detail_parts.append(f"engine={engine}")
         detail = f" ({', '.join(detail_parts)})" if detail_parts else ""
         super().__init__(f"{message}{detail}")
-
-
-class ParameterTranslationError(AiidaRelaxError):
-    """Raised when generic parameters cannot be translated to engine format."""
-
-    def __init__(self, param_key: str, engine: str, reason: str) -> None:
-        self.param_key = param_key
-        self.engine = engine
-        super().__init__(
-            f"Cannot translate parameter '{param_key}' for {engine}: {reason}"
-        )
-
-
-class CodeNotFoundError(AiidaRelaxError):
-    """Raised when a required AiiDA code is not found."""
-
-    def __init__(self, code_label: str) -> None:
-        self.code_label = code_label
-        super().__init__(
-            f"AiiDA code '{code_label}' not found. "
-            "Verify the code is configured: verdi code list"
-        )
-
-
-class GroupNotFoundError(AiidaRelaxError):
-    """Raised when a required AiiDA group is not found."""
-
-    def __init__(self, group_label: str) -> None:
-        self.group_label = group_label
-        super().__init__(
-            f"AiiDA group '{group_label}' not found. "
-            "The group will be created with the given structures."
-        )

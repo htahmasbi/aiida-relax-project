@@ -6,21 +6,12 @@ must follow, enabling static type checking while maintaining flexibility.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from aiida.orm import AbstractCode, Dict, KpointsData, StructureData
 
     from aiida_relax_project.core.enums import EngineType, RelaxType, RunType
-
-
-@runtime_checkable
-class SupportsSubmit(Protocol):
-    """Protocol for AiiDA process submission."""
-
-    def submit(self, **kwargs) -> ProcessNode:  # type: ignore[name-defined]  # noqa: F821
-        """Submit the process to the AiiDA daemon."""
-        ...
 
 
 class ParameterBuilder(Protocol):

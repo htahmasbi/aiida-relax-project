@@ -348,7 +348,7 @@ class DynamicSinglePointWorkChain(WorkChain):
 
         logger.info(
             "Submitting %s calculation for structure %s",
-            self.ctx.engine.value.upper(),
+            self.ctx.engine.upper(),
             self.inputs.structure.pk,
         )
         future = self.submit(CalcClass, **inputs)
@@ -357,7 +357,7 @@ class DynamicSinglePointWorkChain(WorkChain):
     def inspect_calculation(self):
         """Check calculation status."""
         calculation = self.ctx.calc_job
-        engine = self.ctx.engine.value.upper()
+        engine = self.ctx.engine.upper()
 
         if not calculation.is_finished_ok:
             logger.error(
@@ -380,4 +380,4 @@ class DynamicSinglePointWorkChain(WorkChain):
         if "retrieved" in calculation.outputs:
             self.out("retrieved", calculation.outputs.retrieved)
 
-        self.out("engine_used", orm.Str(self.ctx.engine.value))
+        self.out("engine_used", orm.Str(self.ctx.engine))

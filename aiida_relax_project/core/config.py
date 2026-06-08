@@ -141,15 +141,9 @@ class GwConfig(BaseModel):
         description="Target relative accuracy for RI basis selection "
                     "(e.g. 1e-5). Picks the best basis not exceeding this value.",
     )
-    basis_set_file: str = Field(
-        default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states"
-    )
-    ri_basis_set_file: str = Field(
-        default="/home/tahmas41/work/GW_2D/BASIS_AUG_MOLOPT/BASIS_GTH_MOLOPT_AUG_for_excited_states_RI"
-    )
-    potential_file: str = Field(
-        default="/home/tahmas41/work/GW_2D/cp2k/data/POTENTIAL_UZH"
-    )
+    basis_set_file: str = Field(default="BASIS_AUG_MOLOPT")
+    ri_basis_set_file: str = Field(default="BASIS_RI_AUG_MOLOPT")
+    potential_file: str = Field(default="POTENTIAL_AUG")
     kpoint_density: int = Field(
         default=36, ge=1,
         description="Effective k-point density per primitive lattice vector. "
