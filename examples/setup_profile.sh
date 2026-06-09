@@ -28,7 +28,7 @@ INSTITUTION="Casus"                     # Your institution
 DB_BACKEND="core.psql_dos"              # PostgreSQL backend
 DB_HOST="localhost"
 DB_PORT="5432"
-DB_NAME="${DB_NAME:-aiida_db_${PROFILE_NAME}}"  # Database name
+DB_NAME="adb_${PROFILE_NAME}"           # Database name
 DB_USER="Hossein"                       # Database user
 DB_PASS="aiida_secret"                  # Database password
 REPO_PATH="/data/hossein/venv_1/aiida/repo_${PROFILE_NAME}"  # File repository
@@ -120,7 +120,7 @@ verdi profile setup "${DB_BACKEND}" --non-interactive \
     --database-password "${DB_PASS}" \
     --repository-uri "${REPO_PATH}" \
     --set-as-default \
-    --no-use-rabbitmq
+    --use-rabbitmq
 
 # If verdi setup fails, the script stops here (set -e).
 # Your existing profiles are untouched — we never deleted anything.
