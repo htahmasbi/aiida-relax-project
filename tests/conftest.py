@@ -54,8 +54,24 @@ class MockDict:
 _orm.Dict = MockDict
 
 class MockKpointsData:
-    def set_kpoints_mesh(self, mesh):
-        pass
+    def set_kpoints_mesh(self, mesh, offset=None):
+        self._mesh = tuple(mesh)
+        self._offset = tuple(offset) if offset else (0, 0, 0)
+
+    def set_cell(self, cell):
+        self._cell = cell
+
+    def set_kpoints_mesh_from_density(self, density, offset=None):
+        import numpy as np
+        cell = np.array(self._cell)
+        recip = np.linalg.inv(cell).T * 2 * np.pi
+        norms = np.linalg.norm(recip, axis=0)
+        mesh = tuple(max(1, round(n * density)) for n in norms)
+        self._mesh = mesh
+        self._offset = tuple(offset) if offset else (0, 0, 0)
+
+    def get_kpoints_mesh(self):
+        return self._mesh, self._offset
 
 _orm.KpointsData = MockKpointsData
 

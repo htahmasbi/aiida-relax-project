@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import math
 import os
 from pathlib import Path
 from typing import Any, Literal
@@ -148,9 +147,8 @@ class GwConfig(BaseModel):
     kspacing: float = Field(
         default=0.07, gt=0,
         description="K-point spacing in Å⁻¹ (VASP KSPACING convention). "
-                    "The mesh is computed as "
-                    "N_i = max(1, round(2π / (|a_i| × kspacing))) "
-                    "for periodic directions, N=1 for the vacuum axis. "
+                    "The mesh is computed via AiiDA's KpointsData from density "
+                    "(density = 1/kspacing), then non-periodic axes are set to 1. "
                     "kspacing=0.07 gives [12, 1, 12] for a 3×3 BN supercell.",
     )
     kspacing_w: float | None = Field(
@@ -269,14 +267,17 @@ class GwConfig(BaseModel):
         return self._compute_from_kspacing(structure, kspacing_w)
 
     def _compute_from_kspacing(self, structure, kspacing: float) -> list[int]:
-        lengths = structure.lattice.abc
-        result: list[int] = []
+        from aiida.orm import KpointsData
+
+        kpoints = KpointsData()
+        kpoints.set_cell(structure.lattice.matrix)
+        kpoints.set_kpoints_mesh_from_density(density=1.0 / kspacing)
+        mesh, _ = kpoints.get_kpoints_mesh()
+
+        result = list(mesh)
         for i, ax in enumerate("XYZ"):
-            if ax in self.periodic.upper():
-                n = max(1, round(2 * math.pi / (lengths[i] * kspacing)))
-                result.append(n)
-            else:
-                result.append(1)
+            if ax not in self.periodic.upper():
+                result[i] = 1
         return result
 
 
