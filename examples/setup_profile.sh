@@ -88,6 +88,12 @@ sudo -u postgres psql -c \
     echo "  Password set for role '${DB_USER}'" || \
     echo "  WARNING: Could not set password for role '${DB_USER}' (may already have one)"
 
+# Grant schema permissions (required for PostgreSQL 15+)
+sudo -u postgres psql -d "${DB_NAME}" -c \
+    "GRANT USAGE, CREATE ON SCHEMA public TO \"${DB_USER}\"" 2>/dev/null && \
+    echo "  Granted schema permissions to '${DB_USER}'" || \
+    echo "  WARNING: Could not grant schema permissions"
+
 echo ""
 echo "=== 3. Checking for existing profile: ${PROFILE_NAME} ==="
 
