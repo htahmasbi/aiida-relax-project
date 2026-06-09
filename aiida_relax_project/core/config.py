@@ -271,7 +271,7 @@ class GwConfig(BaseModel):
 
         kpoints = KpointsData()
         kpoints.set_cell(structure.lattice.matrix)
-        kpoints.set_kpoints_mesh_from_density(kpoint_density=1.0 / kspacing)
+        kpoints.set_kpoints_mesh_from_density(1.0 / kspacing)
         mesh, _ = kpoints.get_kpoints_mesh()
 
         result = list(mesh)
