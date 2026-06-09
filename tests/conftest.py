@@ -61,12 +61,12 @@ class MockKpointsData:
     def set_cell(self, cell):
         self._cell = cell
 
-    def set_kpoints_mesh_from_density(self, density, offset=None):
+    def set_kpoints_mesh_from_density(self, kpoint_density, offset=None):
         import numpy as np
         cell = np.array(self._cell)
         recip = np.linalg.inv(cell).T * 2 * np.pi
         norms = np.linalg.norm(recip, axis=0)
-        mesh = tuple(max(1, round(n * density)) for n in norms)
+        mesh = tuple(max(1, round(n * kpoint_density)) for n in norms)
         self._mesh = mesh
         self._offset = tuple(offset) if offset else (0, 0, 0)
 
