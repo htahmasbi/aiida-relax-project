@@ -46,8 +46,8 @@ aiida-relax-project/
 │   │   ├── __init__.py
 │   │   └── mc2d_optimade.py              # OPTIMADE structure fetcher
 │   └── transformations/
-│       ├── __init__.py
-│       └── structures.py                 # Rotate, supercell, vacuum
+│   │   ├── __init__.py
+│   │   └── structures.py                 # Rotate, supercell, vacuum
 │   └── utils/
 │       ├── __init__.py
 │       └── cp2k_parsers.py               # Basis/potential file parsers
@@ -56,7 +56,8 @@ aiida-relax-project/
 │   ├── launch_unified.py                 # Unified argparse launcher
 │   └── launch_mc2d_cp2k.py               # MC2D CP2K batch launcher
 ├── examples/
-│   └── setup_cluster.sh                  # Cluster setup template
+│   ├── setup_cluster.sh                  # Cluster setup template
+│   └── setup_profile.sh                  # DB + profile setup template
 ├── data_generation/
 │   ├── build_structures.py
 │   └── fetch_mc2d.py
