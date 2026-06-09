@@ -28,9 +28,10 @@ INSTITUTION="Casus"                     # Your institution
 DB_BACKEND="core.psql_dos"              # PostgreSQL backend
 DB_HOST="localhost"
 DB_PORT="5432"
-DB_NAME="aiida_db_${PROFILE_NAME}"      # Database name
+DB_NAME="${DB_NAME:-aiida_db_${PROFILE_NAME}}"  # Database name
 DB_USER="Hossein"                       # Database user
 DB_PASS="aiida_secret"                  # Database password
+REPO_PATH="/data/hossein/venv_1/aiida/repo_${PROFILE_NAME}"  # File repository
 
 # =============================================================================
 # NOTE: Edit the variables above before running.
@@ -97,27 +98,35 @@ fi
 echo "  Profile '${PROFILE_NAME}' does not exist — proceeding with setup."
 
 echo ""
-echo "=== 4. Setting up AiiDA profile: ${PROFILE_NAME} ==="
+echo "=== 4. Creating repository directory ==="
+mkdir -p "${REPO_PATH}"
+echo "  Created: ${REPO_PATH}"
 
-verdi setup --non-interactive \
+echo ""
+echo "=== 5. Setting up AiiDA profile: ${PROFILE_NAME} ==="
+echo "  Command: verdi profile setup ${DB_BACKEND}"
+echo "  Repository: ${REPO_PATH}"
+
+verdi profile setup "${DB_BACKEND}" --non-interactive \
     --profile-name "${PROFILE_NAME}" \
-    --email "${EMAIL}" \
     --first-name "${FIRST_NAME}" \
     --last-name "${LAST_NAME}" \
+    --email "${EMAIL}" \
     --institution "${INSTITUTION}" \
-    --db-backend "${DB_BACKEND}" \
-    --db-host "${DB_HOST}" \
-    --db-port "${DB_PORT}" \
-    --db-name "${DB_NAME}" \
-    --db-user "${DB_USER}" \
-    --db-pass "${DB_PASS}" \
-    --set-as-default
+    --database-hostname "${DB_HOST}" \
+    --database-port "${DB_PORT}" \
+    --database-name "${DB_NAME}" \
+    --database-username "${DB_USER}" \
+    --database-password "${DB_PASS}" \
+    --repository-uri "${REPO_PATH}" \
+    --set-as-default \
+    --no-use-rabbitmq
 
 # If verdi setup fails, the script stops here (set -e).
 # Your existing profiles are untouched — we never deleted anything.
 
 echo ""
-echo "=== 5. Verifying profile ==="
+echo "=== 6. Verifying profile ==="
 verdi profile list
 verdi profile show "${PROFILE_NAME}"
 
