@@ -18,18 +18,18 @@ set -euo pipefail
 # ============================== CONFIGURATION ================================
 
 # --- Profile settings ---
-PROFILE_NAME="aiida_profile"            # Name for your AiiDA profile
-EMAIL="user@example.com"                # Your email
-FIRST_NAME="First"                      # Your first name
-LAST_NAME="Last"                        # Your last name
-INSTITUTION="My Institution"            # Your institution
+PROFILE_NAME="aiida_cp2k"               # Name for your AiiDA profile
+EMAIL="h.tahmasb@gmail.com"             # Your email
+FIRST_NAME="Hossein"                    # Your first name
+LAST_NAME="Tahmasbi"                    # Your last name
+INSTITUTION="Casus"                     # Your institution
 
 # --- PostgreSQL settings ---
 DB_BACKEND="core.psql_dos"              # PostgreSQL backend
 DB_HOST="localhost"
 DB_PORT="5432"
 DB_NAME="aiida_db_${PROFILE_NAME}"      # Database name
-DB_USER="aiida_user"                    # Database user
+DB_USER="Hossein"                       # Database user
 DB_PASS="aiida_secret"                  # Database password
 
 # =============================================================================
