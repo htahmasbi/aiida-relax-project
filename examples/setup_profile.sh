@@ -70,6 +70,9 @@ sudo -u postgres psql -tc \
         echo "  Created role '${DB_USER}'"
     }
 
+# Note: PostgreSQL folds unquoted identifiers to lowercase.
+# We use quoted identifiers below to preserve the exact case of DB_USER.
+
 sudo -u postgres psql -tc \
     "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" \
     | grep -q 1 \
@@ -79,9 +82,9 @@ sudo -u postgres psql -tc \
         echo "  Created database '${DB_NAME}'"
     }
 
-# Set the password for the role
+# Set the password for the role (quote the identifier to preserve case)
 sudo -u postgres psql -c \
-    "ALTER ROLE ${DB_USER} WITH PASSWORD '${DB_PASS}'" && \
+    "ALTER ROLE \"${DB_USER}\" WITH PASSWORD '${DB_PASS}'" && \
     echo "  Password set for role '${DB_USER}'" || \
     echo "  WARNING: Could not set password for role '${DB_USER}' (may already have one)"
 
