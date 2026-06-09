@@ -31,7 +31,8 @@ DB_PORT="5432"
 DB_NAME="adb_${PROFILE_NAME}"           # Database name
 DB_USER="Hossein"                       # Database user
 DB_PASS="aiida_secret"                  # Database password
-REPO_PATH="/data/hossein/venv_1/aiida/repo_${PROFILE_NAME}"  # File repository
+REPO_DIR="/data/hossein/venv_1/aiida/repo_${PROFILE_NAME}"    # File repository path
+REPO_URI="file://${REPO_DIR}"                                  # File repository URI
 
 # =============================================================================
 # NOTE: Edit the variables above before running.
@@ -99,13 +100,13 @@ echo "  Profile '${PROFILE_NAME}' does not exist — proceeding with setup."
 
 echo ""
 echo "=== 4. Creating repository directory ==="
-mkdir -p "${REPO_PATH}"
-echo "  Created: ${REPO_PATH}"
+mkdir -p "${REPO_DIR}"
+echo "  Created: ${REPO_DIR}"
 
 echo ""
 echo "=== 5. Setting up AiiDA profile: ${PROFILE_NAME} ==="
 echo "  Command: verdi profile setup ${DB_BACKEND}"
-echo "  Repository: ${REPO_PATH}"
+echo "  Repository: ${REPO_URI}"
 
 verdi profile setup "${DB_BACKEND}" --non-interactive \
     --profile-name "${PROFILE_NAME}" \
@@ -118,7 +119,7 @@ verdi profile setup "${DB_BACKEND}" --non-interactive \
     --database-name "${DB_NAME}" \
     --database-username "${DB_USER}" \
     --database-password "${DB_PASS}" \
-    --repository-uri "${REPO_PATH}" \
+    --repository-uri "${REPO_URI}" \
     --set-as-default \
     --use-rabbitmq
 
