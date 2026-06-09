@@ -79,9 +79,9 @@ sudo -u postgres psql -tc \
 
 # Set the password for the role
 sudo -u postgres psql -c \
-    "ALTER ROLE ${DB_USER} WITH PASSWORD '${DB_PASS}'" \
-    &>/dev/null
-echo "  Password set for role '${DB_USER}'"
+    "ALTER ROLE ${DB_USER} WITH PASSWORD '${DB_PASS}'" && \
+    echo "  Password set for role '${DB_USER}'" || \
+    echo "  WARNING: Could not set password for role '${DB_USER}' (may already have one)"
 
 echo ""
 echo "=== 3. Checking for existing profile: ${PROFILE_NAME} ==="
