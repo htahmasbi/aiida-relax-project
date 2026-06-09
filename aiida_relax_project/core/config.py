@@ -267,14 +267,12 @@ class GwConfig(BaseModel):
         return self._compute_from_kspacing(structure, kspacing_w)
 
     def _compute_from_kspacing(self, structure, kspacing: float) -> list[int]:
-        from aiida.orm import KpointsData
+        import numpy as np
 
-        kpoints = KpointsData()
-        kpoints.set_cell(structure.lattice.matrix)
-        kpoints.set_kpoints_mesh_from_density(1.0 / kspacing)
-        mesh, _ = kpoints.get_kpoints_mesh()
-
-        result = list(mesh)
+        cell = np.array(structure.lattice.matrix)
+        recip = np.linalg.inv(cell).T * 2 * np.pi
+        density = 1.0 / kspacing
+        result = [max(1, round(np.linalg.norm(v) * density)) for v in recip]
         for i, ax in enumerate("XYZ"):
             if ax not in self.periodic.upper():
                 result[i] = 1
