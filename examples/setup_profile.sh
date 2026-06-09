@@ -84,10 +84,20 @@ sudo -u postgres psql -c \
 echo "  Password set for role '${DB_USER}'"
 
 echo ""
-echo "=== 3. Setting up AiiDA profile: ${PROFILE_NAME} ==="
+echo "=== 3. Checking for existing profile: ${PROFILE_NAME} ==="
 
-# Delete existing profile with same name to allow re-run
-verdi profile delete "${PROFILE_NAME}" 2>/dev/null || true
+if verdi profile show "${PROFILE_NAME}" &>/dev/null; then
+    echo "  Profile '${PROFILE_NAME}' already exists."
+    echo "  Delete it first if you want to recreate:"
+    echo "    verdi profile delete ${PROFILE_NAME}"
+    echo "  Then re-run this script."
+    exit 1
+fi
+
+echo "  Profile '${PROFILE_NAME}' does not exist — proceeding with setup."
+
+echo ""
+echo "=== 4. Setting up AiiDA profile: ${PROFILE_NAME} ==="
 
 verdi setup --non-interactive \
     --profile-name "${PROFILE_NAME}" \
@@ -100,11 +110,16 @@ verdi setup --non-interactive \
     --db-port "${DB_PORT}" \
     --db-name "${DB_NAME}" \
     --db-user "${DB_USER}" \
-    --db-pass "${DB_PASS}"
+    --db-pass "${DB_PASS}" \
+    --set-as-default
+
+# If verdi setup fails, the script stops here (set -e).
+# Your existing profiles are untouched — we never deleted anything.
 
 echo ""
-echo "=== 4. Verifying profile ==="
+echo "=== 5. Verifying profile ==="
 verdi profile list
+verdi profile show "${PROFILE_NAME}"
 
 echo ""
 echo "============================================"
