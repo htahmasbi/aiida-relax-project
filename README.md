@@ -79,8 +79,10 @@ conda create -n aiida-env python=3.11
 conda activate aiida-env
 pip install aiida-core aiida-vasp aiida-cp2k ase
 pip install -e .
-# Modify and run the setup script to automatically configure the environment and cluster settings:
-bash examples/setup_cluster.sh
+# Modify and run the setup scripts to automatically configure 
+# the database, profile, environment, and cluster settings:
+1. bash examples/setup_profile.sh
+2. bash examples/setup_cluster.sh
 # or alternatively, set up your profile and start the background services manually:
 verdi quicksetup
 verdi daemon start

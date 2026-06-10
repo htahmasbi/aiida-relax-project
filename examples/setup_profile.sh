@@ -22,15 +22,15 @@ PROFILE_NAME="aiida_cp2k"               # Name for your AiiDA profile
 EMAIL="h.tahmasb@gmail.com"             # Your email
 FIRST_NAME="Hossein"                    # Your first name
 LAST_NAME="Tahmasbi"                    # Your last name
-INSTITUTION="Casus"                     # Your institution
+INSTITUTION="casus"                     # Your institution
 
 # --- PostgreSQL settings ---
 DB_BACKEND="core.psql_dos"              # PostgreSQL backend
 DB_HOST="localhost"
 DB_PORT="5432"
-DB_NAME="adb_${PROFILE_NAME}"           # Database name
-DB_USER="Hossein"                       # Database user
-DB_PASS="aiida_secret"                  # Database password
+DB_NAME="db_${PROFILE_NAME}"            # Database name
+DB_USER="tahmas41"                      # Database user
+DB_PASS="123456"                        # Database password
 REPO_DIR="/data/hossein/venv_1/aiida/repo_${PROFILE_NAME}"    # File repository path
 REPO_URI="file://${REPO_DIR}"                                  # File repository URI
 
